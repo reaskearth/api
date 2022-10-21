@@ -5,10 +5,8 @@
 
 The Reask API currently supports two products:
 
-1. DeepCyc: high-resolution probabilistic view of tropical cyclone (TC) risk everywhere in the world, both under the current as well as future climate scenarios.
+1. DeepCyc: a high-resolution probabilistic view of tropical cyclone (TC) risk everywhere in the world, both under the current as well as future climate scenarios.
 2. HindCyc: high-resolution tropical cyclone gust footprint estimates for both historical storms and immediately after landfall.
-
-The Reask Map API base URL is: `https://api.reask.earth`
 
 Further information can be found on our website (https://reask.earth/products/).
 
@@ -16,7 +14,7 @@ Further information can be found on our website (https://reask.earth/products/).
 
 The API uses an OpenID Connect (IODC) authentication flow whereby a username and password are used to get an access token, which is then used for subsequent API calls. Please keep your username and password in a secure place.
 
-Example code used to get an access token:
+Example Python code used to get an access token:
 
 ```Python
 import requests
@@ -57,19 +55,17 @@ params = {
     'epoch': 'PresentDay',
     'latitude': 25.6,
     'longitude': -81.6,
-    'years': [10, 50, 100, 250, 500]
+    'years': [10, 100, 250]
 }
 
 res = requests.get(url, params=params)
 assert res.status_code == 200, 'API GET request failed'
 ```
 
-Will return:
+Returns:
 
-```
+```Python
 {
-    "cell_center_lat": 25.6005859375,
-    "cell_center_lon": -81.5966796875,
     "product": "DeepCyc-2.0.3"
     "data": [
         {
@@ -77,16 +73,8 @@ Will return:
             "windspeed_ft_3sec_kph": 136
         },
         {
-            "return_period_year": 50,
-            "windspeed_ft_3sec_kph": 208
-        },
-        {
             "return_period_year": 100,
             "windspeed_ft_3sec_kph": 235
-        },
-        {
-            "return_period_year": 250,
-            "windspeed_ft_3sec_kph": 263
         },
         {
             "return_period_year": 500,
@@ -96,14 +84,52 @@ Will return:
 }
 ```
 
-2. `/deepcyc/v1/gateep/`: returns TC surface windspeeds crossing/entering a gate at a specified return period. The gate can be a single line or a more complex shape such as a circle or square. The values returned are 1-minute averaged.
+2. `/deepcyc/v1/gateep/`: returns TC surface windspeeds crossing/entering a gate at a specified return period. The gate can be a single line, a quadrilateral or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
 
+```Python
+url = 'https://api.reask.earth/v1/deepcyc/gateep'
+params = {
+    'access_token': auth_res['access_token'], # access token from auth step
+    'hazard': 'TCWind',
+    'epoch': 'PresentDay',
+    'gate': 'circle'
+    'center_latitude': 25.6,
+    'center_longitude': -81.6,
+    'radius_km': 50,
+    'years': [20, 50, 200]
+}
+
+res = requests.get(url, params=params)
+assert res.status_code == 200, 'API GET request failed'
+```
+
+Returns:
+
+```Python
+{
+    "data": [
+        {
+            "return_period_year": 20,
+            "windspeed_nt_1min_kph": 174
+        },
+        {
+            "return_period_year": 50,
+            "windspeed_nt_1min_kph": 218
+        },
+        {
+            "return_period_year": 200,
+            "windspeed_nt_1min_kph": 261
+        }
+    ],
+    "product": "DeepCyc-2.0.3"
+}
+```
 
 ## HindCyc Usage
 
-The HindCyc API endpoints are similar to DeepCyc, there are two endpoints:
+The HindCyc API endpoints are similar to DeepCyc:
 
-1. `v1/hindcyc/pointep`: returns estimated TC surface windspeeds at a requested latitude, longitude point for all historical storms within a provided year range. The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period.
+1. `v1/hindcyc/pointep`: returns estimated TC surface windspeeds at a requested latitude, longitude point for all historical storms within a set of years. The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period.
 
-2. `v1/hindcyc/gateep`: returns agency recorded TC surface windspeeds crossing/entering a gate. The gate can be a single line or a more complex shape such as a circle or square. The values returned are 1-minute averaged.
+2. `v1/hindcyc/gateep`: returns agency recorded TC surface windspeeds crossing/entering a gate. The gate can be a line a quadrilateral or a circle. The values returned are 1-minute averaged.
 
