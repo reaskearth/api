@@ -77,8 +77,8 @@ Returns:
             "windspeed_ft_3sec_kph": 235
         },
         {
-            "return_period_year": 500,
-            "windspeed_ft_3sec_kph": 287
+            "return_period_year": 250,
+            "windspeed_ft_3sec_kph": 263
         }
     ],
 }
