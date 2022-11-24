@@ -45,11 +45,11 @@ The `access_token` value is then used as a `GET` request parameter as shown belo
 
 ## DeepCyc Usage
 
-The DeepCyc API has two endpoints:
+The DeepCyc API has two endpoints pointep and gateep.
 
 ### PointEP
 
-`v1/deepcyc/pointep/`: returns TC surface windspeeds at a requested latitude, longitude point and return period (inverse of the exceedance probability). The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
+`v1/deepcyc/pointep/` returns TC surface windspeeds at a requested latitude, longitude point and return period (inverse of the exceedance probability). The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
 
 ```Python
 url = 'https://api.reask.earth/v1/deepcyc/pointep'
@@ -104,7 +104,9 @@ Since the API supports providing lists of both requested return periods and loca
 - `return_period_year`: the return period of the given windspeed.
 - `windspeed_ft_3sec_kph`: the windspeed value for the given location and return period. In this case the value is terrain-corrected 3-second gust in units of kilometers per hour.
 
-2. `/deepcyc/v1/gateep/`: returns TC surface windspeeds crossing/entering a gate at a specified return period. The gate can be a single line, a quadrilateral or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
+### GateEP
+
+`/deepcyc/v1/gateep/` returns TC surface windspeeds crossing/entering a gate at a specified return period. The gate can be a single line, a quadrilateral or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
 
 ```Python
 url = 'https://api.reask.earth/v1/deepcyc/gateep'
@@ -149,9 +151,11 @@ Returns:
 
 ## HindCyc Usage
 
-The HindCyc API endpoints are similar to DeepCyc:
+The HindCyc API endpoints are similar to DeepCyc.
 
-1. `v1/hindcyc/pointep`: returns estimated TC surface windspeeds at a requested latitude, longitude point for all historical storms within a set of years. The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
+### PointEP
+
+`v1/hindcyc/pointep` returns estimated TC surface windspeeds at a requested latitude, longitude point for all historical storms within a set of years. The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
 
 
 ```Python
@@ -212,8 +216,9 @@ Returns:
     }
 ```
 
-Not that the above list has been shortened. 
+Not that the above list has been shortened.
 
+### GateEP
 
-2. `v1/hindcyc/gateep`: returns agency recorded TC surface windspeeds crossing/entering a gate. The gate can be a line a quadrilateral or a circle. The values returned are 1-minute averaged.
+`v1/hindcyc/gateep` returns agency recorded TC surface windspeeds crossing/entering a gate. The gate can be a line a quadrilateral or a circle. The values returned are 1-minute averaged.
 
