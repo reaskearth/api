@@ -8,7 +8,9 @@ The Reask API currently supports two products:
 1. DeepCyc: a high-resolution probabilistic view of tropical cyclone (TC) risk everywhere in the world, both under the current as well as future climate scenarios.
 2. HindCyc: high-resolution tropical cyclone gust footprint estimates for both historical storms and immediately after landfall.
 
-Further information can be found on our website (https://reask.earth/products/). An up-to-date version of this ReadMe can be found here: https://github.com/reaskearth/api/blob/main/README.md
+Further information can be found on our website (https://reask.earth/products/).
+
+An up-to-date version of this ReadMe can be found here: https://github.com/reaskearth/api/blob/main/README.md
 
 ## API Authentication
 
@@ -96,9 +98,9 @@ Returns:
 
 Since the API supports providing lists of both requested return periods and locations the data returned is in the form of a list with items corrosponding to the requested parameters. Each list item has the following fields:
 
-    - `cell_latitude` and `cell_longitude`: the center point of the cell that encompasses the requested location. Reask uses a global, regular lat, lon grid with roughly 1km resolution so the cell coordinates returned will not be more than around 700m from the requested location.
-    - `return_period_year`: the return period of the given windspeed.
-    - `windspeed_ft_3sec_kph`: the windspeed value for the given location and return period. In this case the value is terrain-corrected 3-second gust in units of kilometers per hour.  
+- `cell_latitude` and `cell_longitude`: the center point of the cell that encompasses the requested location. Reask uses a global, regular lat, lon grid with roughly 1km resolution so the cell coordinates returned will not be more than around 700m from the requested location.
+- `return_period_year`: the return period of the given windspeed.
+- `windspeed_ft_3sec_kph`: the windspeed value for the given location and return period. In this case the value is terrain-corrected 3-second gust in units of kilometers per hour.
 
 2. `/deepcyc/v1/gateep/`: returns TC surface windspeeds crossing/entering a gate at a specified return period. The gate can be a single line, a quadrilateral or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
 
