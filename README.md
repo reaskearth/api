@@ -47,7 +47,9 @@ The `access_token` value is then used as a `GET` request parameter as shown belo
 
 The DeepCyc API has two endpoints:
 
-1. `v1/deepcyc/pointep/`: returns TC surface windspeeds at a requested latitude, longitude point and return period (inverse of the exceedance probability). The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
+### PointEP
+
+`v1/deepcyc/pointep/`: returns TC surface windspeeds at a requested latitude, longitude point and return period (inverse of the exceedance probability). The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
 
 ```Python
 url = 'https://api.reask.earth/v1/deepcyc/pointep'
