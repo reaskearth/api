@@ -11,6 +11,11 @@ from pathlib import Path
 
 def get_access_token():
 
+    # The format of the ~/.reask config containing username and password is:
+    #[default]
+    #username = <USERNAME>
+    #password = <PASSWORD>
+    #
     config_file = Path(os.environ['HOME']) / '.reask'
 
     config = configparser.ConfigParser()
