@@ -10,7 +10,7 @@ The Reask API currently supports two products:
 
 Further information can be found on our website (https://reask.earth/products/).
 
-An up-to-date version of this ReadMe can be found here: https://github.com/reaskearth/api/blob/main/README.md
+An up-to-date version of this ReadMe can be found here: https://github.com/reaskearth/api/blob/main/README.md and example code at https://github.com/reaskearth/api/blob/main/example_code/
 
 ## API Authentication
 
@@ -58,8 +58,8 @@ params = {
     'peril': 'TC_Wind',
     'tag': 'Miami Beach',
     'epoch': 'Present_Day',
-    'latitudes': [25.80665],
-    'longitudes': [-80.12412],
+    'lats': [25.80665],
+    'lons': [-80.12412],
     'years': [10, 100, 250]
 }
 
@@ -73,18 +73,24 @@ Returns:
 {
     "data": [
         {
+            "latitude:": 25.80665,
+            "longitude:" -80.12412,
             "cell_latitude": 25.8056640625,
             "cell_longitude": -80.1318359375,
             "return_period_year": 10,
             "windspeed_ft_3sec_kph": 128
         },
         {
+            "latitude:": 25.80665,
+            "longitude:" -80.12412,
             "cell_latitude": 25.8056640625,
             "cell_longitude": -80.1318359375,
             "return_period_year": 100,
             "windspeed_ft_3sec_kph": 212
         },
         {
+            "latitude:": 25.80665,
+            "longitude:" -80.12412,
             "cell_latitude": 25.8056640625,
             "cell_longitude": -80.1318359375,
             "return_period_year": 250,
@@ -100,6 +106,7 @@ Returns:
 
 Since the API supports providing lists of both requested return periods and locations the data returned is in the form of a list with items corrosponding to the requested parameters. Each list item has the following fields:
 
+- `latitude` and `longitude`: the latitude and longitude of the requested location.
 - `cell_latitude` and `cell_longitude`: the center point of the cell that encompasses the requested location. Reask uses a global, regular lat, lon grid with roughly 1km resolution so the cell coordinates returned will not be more than around 700m from the requested location.
 - `return_period_year`: the return period of the given windspeed.
 - `windspeed_ft_3sec_kph`: the windspeed value for the given location and return period. In this case the value is terrain-corrected 3-second gust in units of kilometers per hour.
@@ -164,8 +171,8 @@ params = {
     'access_token': auth_res['access_token'], # access token from auth step
     'peril': 'TC_Wind',
     'tag': 'Miami Beach',
-    'latitudes': [25.80665],
-    'longitudes': [-80.12412],
+    'lats': [25.80665],
+    'lons': [-80.12412],
 }
 
 res = requests.get(url, params=params)
@@ -222,3 +229,7 @@ Not that the above list has been shortened.
 
 `v1/hindcyc/gateep` returns agency recorded TC surface windspeeds crossing/entering a gate. The gate can be a line a quadrilateral or a circle. The values returned are 1-minute averaged.
 
+
+## Contact
+
+email: nic at reask.earth
