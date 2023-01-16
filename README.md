@@ -14,7 +14,7 @@ An up-to-date version of this ReadMe can be found here: https://github.com/reask
 
 ## API Authentication
 
-The API uses an OpenID Connect (IODC) authentication flow whereby a username and password are used to get an access token, which is then used for subsequent API calls. Please keep your username and password in a secure place.
+The API uses an OpenID Connect (IODC) authentication flow whereby a username/email and password are used to get an access token, which is then used for subsequent API calls. Please keep your password in a secure place.
 
 Example Python code used to get an access token:
 
@@ -23,7 +23,7 @@ import requests
 import json
 
 auth_url = 'https://api.reask.earth/v1/token'
-args = {'username': '<MY_USERNAME>',
+args = {'username': '<MY_USERNAME_OR_EMAIL>',
         'password': '<MY_PASSWORD>'}
 res = requests.post(auth_url, data=args)
 

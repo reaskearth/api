@@ -13,7 +13,7 @@ def get_access_token():
 
     # The format of the ~/.reask config containing username and password is:
     #[default]
-    #username = <USERNAME>
+    #username = <USERNAME_OR_EMAIL>
     #password = <PASSWORD>
     #
     config_file = Path(os.environ['HOME']) / '.reask'
