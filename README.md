@@ -12,7 +12,7 @@ Further information can be found on our website (https://reask.earth/products/).
 
 An up-to-date version of this ReadMe can be found here: https://github.com/reaskearth/api/blob/main/README.md
 
-Example code Python3 is here: https://github.com/reaskearth/api/blob/main/example_code/. If you have a Reask account, can be run with:
+Example code Python3 is here: https://github.com/reaskearth/api/blob/main/example_code/. If you have a Reask account, it can be run with:
 
 ```
 git clone https://github.com/reaskearth/api.git reask-api
