@@ -204,7 +204,7 @@ assert res.status_code == 200, 'API GET request failed'
 
 Returns:
 
-```
+```Python
     {
         "data": [
             {
