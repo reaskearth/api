@@ -10,7 +10,16 @@ The Reask API currently supports two products:
 
 Further information can be found on our website (https://reask.earth/products/).
 
-An up-to-date version of this ReadMe can be found here: https://github.com/reaskearth/api/blob/main/README.md and example code at https://github.com/reaskearth/api/blob/main/example_code/
+An up-to-date version of this ReadMe can be found here: https://github.com/reaskearth/api/blob/main/README.md
+
+Example code Python3 is here https://github.com/reaskearth/api/blob/main/example_code/ . And if you have a Reask account, can be run with:
+
+```
+git clone https://github.com/reaskearth/api.git reask-api
+cd reask-api/example_code
+python3 ./point_ep.py
+python3 ./gate_ep.py
+```
 
 ## API Authentication
 
