@@ -47,11 +47,11 @@ def main():
 
     access_token = get_access_token()
 
-    lats = [30, 29, 30]
-    lons = [-91, -90, -89] 
+    lats = [28, 27.5, 25, 25, 27.5, 30]
+    lons = [-83, -83, -81.5, -79.5, -79.5, -80]
 
-    ret = gate_ep(access_token, lats, lons, 'line', tag='New_Orleans')
-    with open('New_Orleans_GateEP_DeepCyc_Present_Day_API_Sample.json', 'w') as f:
+    ret = gate_ep(access_token, lats, lons, 'line', tag='Florida')
+    with open('Florida_GateEP_DeepCyc_Present_Day_API_Sample.json', 'w') as f:
         print(json.dumps(ret, indent=4), file=f)
 
 
