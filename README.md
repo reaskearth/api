@@ -113,7 +113,7 @@ Since the API supports providing lists of both requested return periods and loca
 
 ### GateEP
 
-`/deepcyc/v1/gateep/` returns TC surface windspeeds crossing/entering a gate at a specified return period. The gate can be a single line, a quadrilateral or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
+`/deepcyc/v1/gateep/` returns TC surface windspeeds crossing/entering a gate at a specified return period. The gate can be a line, a rectangle or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
 
 ```Python
 url = 'https://api.reask.earth/v1/deepcyc/gateep'
@@ -122,8 +122,8 @@ params = {
     'peril': 'TC_Wind',
     'epoch': 'Present_Day',
     'gate': 'circle'
-    'latitudes': [25.6],
-    'longitudes': [-81.6],
+    'lats': [30],
+    'lons': [-90.0],
     'radius_km': 50,
     'years': [20, 50, 200]
 }
@@ -139,22 +139,36 @@ Returns:
     "data": [
         {
             "return_period_year": 20,
-            "windspeed_nt_1min_kph": 174
+            "windspeed_nt_1min_kph": 197
         },
         {
             "return_period_year": 50,
-            "windspeed_nt_1min_kph": 218
+            "windspeed_nt_1min_kph": 234
         },
         {
-            "return_period_year": 200,
-            "windspeed_nt_1min_kph": 261
+            "return_period_year": 100,
+            "windspeed_nt_1min_kph": 256
         }
     ],
-    "product": "DeepCyc-2.0.5",
     "epoch": "Present_Day",
+    "gate": "circle",
+    "lats": [
+        29.0
+    ],
+    "lons": [
+        -90.0
+    ],
+    "product": "DeepCyc-2.0.3",
+    "radius_km": 50.0,
     "simulation_years": 20000
 }
 ```
+
+The parameters provided depend on the 'gate' type. They are as follows:
+
+circle: requires a single `lat` and `lon` point representing the centre as well as a `radius_km`.
+rectangle: requires a pair of `lat` and `lon` representing the bottom left and top right corners in that order.
+line: requires two or more points representing a multi-segment line. The example code shows a line following the coast around New Orleans, USA.
 
 ## HindCyc Usage
 
