@@ -14,7 +14,6 @@ def gate_ep(access_token, lats, lons, gate, epoch=None, tag=None):
         lons = [lons]
 
     url = 'https://api.reask.earth/v1/deepcyc/gateep'
-    #url = 'http://api.reask.earth:5001/v1/deepcyc/gateep'
     params = {
         'access_token': access_token,
         'peril': 'TC_Wind',
