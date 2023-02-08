@@ -1,5 +1,5 @@
 
-import os
+import os.path
 import configparser
 import requests
 from pathlib import Path
@@ -11,7 +11,8 @@ def get_access_token():
     #username = <USERNAME_OR_EMAIL>
     #password = <PASSWORD>
     #
-    config_file = Path(os.environ['HOME']) / '.reask'
+    home_dir = os.path.expanduser('~')
+    config_file = Path(home_dir) / '.reask'
 
     config = configparser.ConfigParser()
     config.read(config_file)
