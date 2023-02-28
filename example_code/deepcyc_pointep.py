@@ -7,24 +7,21 @@ import time
 
 from auth import get_access_token
 
-def gate_ep(access_token, lats, lons, gate, epoch=None, tag=None):
+
+def deepcyc_pointep(access_token, lats, lons, epoch=None, tag=None):
 
     if type(lats) != type([]):
         lats = [lats]
         lons = [lons]
 
-    url = 'https://api.reask.earth/v1/deepcyc/gateep'
+    url = 'https://api.reask.earth/v1/deepcyc/pointep'
     params = {
         'access_token': access_token,
         'peril': 'TC_Wind',
         'lats': lats,
         'lons': lons,
-        'gate': gate,
-        'years': [20, 50, 100]
+        'years': [5, 10, 25, 50, 100, 250]
     }
-
-    if gate == 'circle':
-        params['radius_km'] = 50
     if tag is not None:
         params['tag'] = tag
     if epoch is not None:
@@ -37,7 +34,7 @@ def gate_ep(access_token, lats, lons, gate, epoch=None, tag=None):
         print(res.text)
         return None
 
-    print('gateep {} took {}ms'.format(gate, round((time.time() - start_time) * 1000)))
+    print('pointep took {}ms'.format(round((time.time() - start_time) * 1000)))
 
     return res.json()
 
@@ -45,12 +42,21 @@ def gate_ep(access_token, lats, lons, gate, epoch=None, tag=None):
 def main():
 
     access_token = get_access_token()
+    min_lat = 32.5
+    max_lat = 37.5
+    min_lon = 130.0
+    max_lon = 140.0
 
-    lats = [28, 27.5, 25, 25, 27.5, 30]
-    lons = [-83, -83, -81.5, -79.5, -79.5, -80]
+    lats = []
+    lons = []
+    for i in range(10):
+        lat = random.randrange(round(min_lat*1000), round(max_lat*1000)) / 1000
+        lon = random.randrange(round(min_lon*1000), round(max_lon*1000)) / 1000
+        lats.append(lat)
+        lons.append(lon)
 
-    ret = gate_ep(access_token, lats, lons, 'line', tag='Florida')
-    with open('Florida_GateEP_DeepCyc_Present_Day_API_Sample.json', 'w') as f:
+    ret = deepcyc_pointep(access_token, lats, lons, tag='Japan')
+    with open('Japan_DeepCyc_Present_Day_API_Sample.json', 'w') as f:
         print(json.dumps(ret, indent=4), file=f)
 
 
