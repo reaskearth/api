@@ -17,8 +17,8 @@ Example code Python3 is here: https://github.com/reaskearth/api/blob/main/exampl
 ```
 git clone https://github.com/reaskearth/api.git reask-api
 cd reask-api/example_code
-python3 ./deepcyc_point_ep.py
-python3 ./deepcyc_gate_ep.py
+python3 ./deepcyc_pointep.py
+python3 ./deepcyc_gateep.py
 ```
 
 ## API Authentication
@@ -54,11 +54,11 @@ The `access_token` value is then used as a `GET` request parameter as shown in t
 
 ## DeepCyc Usage
 
-The DeepCyc API has four endpoints **pointep**, **gateep**, **pointevents** and **gateevents**.
+The DeepCyc API has four endpoints **pointep**, **gateep**, **point** and **gate**.
 
 ### PointEP
 
-`v1/deepcyc/pointep/` returns TC surface windspeeds at a requested latitude, longitude point and return period (inverse of the exceedance probability). The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
+`v1/deepcyc/pointep` returns TC surface windspeeds at a requested latitude, longitude point and return period (inverse of the exceedance probability). The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
 
 ```Python
 url = 'https://api.reask.earth/v1/deepcyc/pointep'
@@ -124,7 +124,7 @@ If a requested location is not available, e.g because it is not considered at ri
 
 ### GateEP
 
-`/deepcyc/v1/gateep/` returns TC surface windspeeds crossing/entering a gate at a specified return period. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
+`v1/deepcyc/gateep` returns TC surface windspeeds crossing/entering a gate at a specified return period. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
 
 ```Python
 url = 'https://api.reask.earth/v1/deepcyc/gateep'
@@ -181,13 +181,13 @@ The parameters provided depend on the 'gate' type. They are as follows:
 - `polygon`: requires a list of `lat` and `lon` pairs representing the corners of the shape. The first and last points must be the same.
 - `line`: requires two or more points representing a multi-segment line. The example code (https://github.com/reaskearth/api/blob/main/example_code/gate_ep.py) shows a line following the coast around New Orleans, USA.
 
-### PointEvents
+### Point
 
-`v1/deepcyc/pointevents/` returns maximum TC surface windspeeds of all synthetic events impacting a given latitude, longitude point during the given epoch. The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
+`v1/deepcyc/point` returns maximum TC surface windspeeds of all (synthetic) events impacting a given latitude, longitude point during the given epoch. The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
 
 
 ```Python
-url = 'https://api.reask.earth/v1/deepcyc/pointevents'
+url = 'https://api.reask.earth/v1/deepcyc/point'
 params = {
     'access_token': auth_res['access_token'], # access token from auth step
     'peril': 'TC_Wind',
@@ -245,12 +245,12 @@ Returns:
 Not that the above list has been shortened.
 
 
-### GateEvents
+### Gate
 
-`v1/deepcyc/gateevents/` returns TC maximum surface windspeeds for all events crossing/entering a gate during a given epoch. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
+`v1/deepcyc/gate` returns TC maximum surface windspeeds for all events crossing or within a gate during a given epoch. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
 
 ```Python
-url = 'https://api.reask.earth/v1/deepcyc/gateevents'
+url = 'https://api.reask.earth/v1/deepcyc/gate'
 params = {
     'access_token': auth_res['access_token'], # access token from auth step
     'peril': 'TC_Wind',
@@ -299,15 +299,15 @@ Returns:
 
 ## Metryc Usage
 
-The Metryc API supports **pointevents** and **gateevents** endpoints.
+The Metryc API supports **point** and **gate** endpoints.
 
-### PointEvents
+### Point
 
-`v1/metryc/pointevents` returns estimated TC surface windspeeds at a requested latitude, longitude point for all historical storms within a set of years. The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. Currently only the period 1980 to 2022 is supported. For example:
+`v1/metryc/point` returns estimated TC surface windspeeds at a requested latitude, longitude point for all historical storms within a set of years. The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. Currently only the period 1980 to 2022 is supported. For example:
 
 
 ```Python
-url = 'https://api.reask.earth/v1/metryc/pointeevents'
+url = 'https://api.reask.earth/v1/metryc/point'
 params = {
     'access_token': auth_res['access_token'], # access token from auth step
     'peril': 'TC_Wind',
@@ -366,9 +366,9 @@ Returns:
 
 Not that the above list has been shortened.
 
-### GateEvents
+### Gate
 
-`v1/metryc/gateevents` returns agency recorded TC surface windspeeds crossing/entering a gate. The values returned are 1-minute averaged and the underlying dataset used is IBTrACS (https://www.ncei.noaa.gov/products/international-best-track-archive). You can think of this endpoint as an alternative way to query the IBTrACS database and it is useful for comparing the Reask products with observed TC risk.
+`v1/metryc/gate` returns agency recorded TC surface windspeeds entering or within a gate. The values returned are 1-minute averaged and the underlying dataset used is IBTrACS (https://www.ncei.noaa.gov/products/international-best-track-archive). You can think of this endpoint as an alternative way to query the IBTrACS database and it is useful for comparing the Reask products with observed TC risk.
 
 ## Contact
 
