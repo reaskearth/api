@@ -3,16 +3,16 @@
 
 ## Introduction
 
-The Reask API currently supports three products:
+The Reask API currently supports two products:
 
 1. DeepCyc: a high-resolution probabilistic view of tropical cyclone (TC) risk everywhere in the world, both under current as well as future climate scenarios.
-2. Metryc: high-resolution tropical cyclone (TC) windspeed estimates for historical events using agency best track data.
+2. Metryc: high-resolution tropical cyclone (TC) windspeed estimates for historical events based on our ML windfield model and incorporating agency best track data.
 
 Further information can be found on our website (https://reask.earth/products/).
 
 An up-to-date version of this README can be found here: https://github.com/reaskearth/api/blob/main/README.md
 
-Example code Python3 is here: https://github.com/reaskearth/api/blob/main/example_code/. If you have a Reask account, it can be run with:
+Example code Python3 is here: https://github.com/reaskearth/api/blob/main/example_code. If you have a Reask account, it can be run with:
 
 ```
 git clone https://github.com/reaskearth/api.git reask-api
@@ -54,7 +54,7 @@ The `access_token` value is then used as a `GET` request parameter as shown in t
 
 ## DeepCyc Usage
 
-The DeepCyc API has four endpoints **pointep**, **gateep**, **pointevents**, **gateevents**.
+The DeepCyc API has four endpoints **pointep**, **gateep**, **pointevents** and **gateevents**.
 
 ### PointEP
 
@@ -177,13 +177,13 @@ Returns:
 
 The parameters provided depend on the 'gate' type. They are as follows:
 
-    * circle: requires a single `lat` and `lon` point representing the centre as well as a `radius_km`.
-    * polygon: requires a list of `lat` and `lon` pairs representing the corners of the shape. The first and last points must be the same.
-    * line: requires two or more points representing a multi-segment line. The example code (https://github.com/reaskearth/api/blob/main/example_code/gate_ep.py) shows a line following the coast around New Orleans, USA.
+- `circle`: requires a single `lat` and `lon` point representing the centre as well as a `radius_km`.
+- `polygon`: requires a list of `lat` and `lon` pairs representing the corners of the shape. The first and last points must be the same.
+- `line`: requires two or more points representing a multi-segment line. The example code (https://github.com/reaskearth/api/blob/main/example_code/gate_ep.py) shows a line following the coast around New Orleans, USA.
 
 ### PointEvents
 
-`v1/deepcyc/pointevents/` returns TC surface windspeeds of all (modelled) events impacting a given latitude, longitude point. The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
+`v1/deepcyc/pointevents/` returns maximum TC surface windspeeds of all synthetic events impacting a given latitude, longitude point during the given epoch. The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
 
 
 ```Python
@@ -247,7 +247,7 @@ Not that the above list has been shortened.
 
 ### GateEvents
 
-`/deepcyc/v1/gateevents/` returns TC surface windspeeds for all events crossing/entering a gate during a given epoch. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
+`v1/deepcyc/gateevents/` returns TC maximum surface windspeeds for all events crossing/entering a gate during a given epoch. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
 
 ```Python
 url = 'https://api.reask.earth/v1/deepcyc/gateevents'
