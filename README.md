@@ -12,10 +12,27 @@ Further information can be found on our website (https://reask.earth/products/).
 
 An up-to-date version of this README can be found here: https://github.com/reaskearth/api/blob/main/README.md
 
-Example code Python3 is here: https://github.com/reaskearth/api/blob/main/example_code. If you have a Reask account, it can be run with:
+## Quickstart
+
+Put your Reask credentials into a file called `.reask` in your home directory using the following format:
+
+```
+[default]
+username = <USERNAME_OR_EMAIL>
+password = <PASSWORD>
+```
+
+Check the permissions of this file and make sure it is only readable by yourself. 
+
+Take a look at the Python3 example code here: https://github.com/reaskearth/api/ . This can be downloaded by either clicking on the green **Code** button or using the `git` command as follows:
 
 ```
 git clone https://github.com/reaskearth/api.git reask-api
+```
+
+Once downloaded it can be run with:
+
+```
 cd reask-api/example_code
 python3 ./deepcyc_pointep.py
 python3 ./deepcyc_gateep.py
