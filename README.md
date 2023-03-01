@@ -21,6 +21,8 @@ python3 ./deepcyc_pointep.py
 python3 ./deepcyc_gateep.py
 ```
 
+This should leave a `.json` file in the current directory containing the results.
+
 ## API Authentication
 
 The API uses an OpenID Connect (IODC) authentication flow whereby a username/email and password are used to get an access token, which is then used for subsequent API calls. Please keep your password in a secure place.
@@ -56,7 +58,7 @@ The `access_token` value is then used as a `GET` request parameter as shown in t
 
 The DeepCyc API has four endpoints **pointep**, **gateep**, **point** and **gate**.
 
-### PointEP
+### PointEP (Point Exceedance Probability)
 
 `v1/deepcyc/pointep` returns TC surface windspeeds at a requested latitude, longitude point and return period (inverse of the exceedance probability). The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
 
@@ -116,15 +118,15 @@ Returns:
 Since the API supports providing lists of both requested return periods and locations the data returned is in the form of a list with items corrosponding to the requested parameters. Each list item has the following fields:
 
 - `latitude` and `longitude`: the latitude and longitude of the requested location.
-- `cell_latitude` and `cell_longitude`: the center point of the cell that encompasses the requested location. Reask uses a global, regular lat, lon grid with roughly 1km resolution so the cell coordinates returned will not be more than around 700m from the requested location.
+- `cell_latitude` and `cell_longitude`: the center point of the cell that encompasses the requested location. Reask uses a global, regular lat, lon grid with roughly 1km resolution for all wind hazard products. Given this resolution the cell coordinates returned will never be more than around 700m from the requested location.
 - `return_period_year`: the return period of the given windspeed.
 - `windspeed_ft_3sec_kph`: the windspeed value for the given location and return period. In this case the value is terrain-corrected 3-second gust in units of kilometers per hour.
 
-If a requested location is not available, e.g because it is not considered at risk or outside the allowed region, then the API request will still succeed but the values returned with will 'NA'.
+If a requested location is not available, e.g because it is not considered at risk or outside the allowed region, then the API request will still succeed but the values returned with will `NA` and a `message` field will provide some explanation.
 
-### GateEP
+### GateEP (Gate Exceedance Probability)
 
-`v1/deepcyc/gateep` returns TC surface windspeeds crossing/entering a gate at a specified return period. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
+`v1/deepcyc/gateep` returns TC maximum surface windspeeds crossing/entering a gate at a specified return period. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
 
 ```Python
 url = 'https://api.reask.earth/v1/deepcyc/gateep'
