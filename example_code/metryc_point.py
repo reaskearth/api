@@ -43,6 +43,15 @@ def main():
     with open('Jackson_Square_Metryc_Present_Day_API_Sample.json', 'w') as f:
         print(json.dumps(ret, indent=4), file=f)
 
+    lats = [25.5]
+    lons = [-81]
+
+    ret = metryc_point(access_token, lats, lons, tag="Everglades")
+    with open('Everglades_Metryc_Present_Day_API_Sample.json', 'w') as f:
+        print(json.dumps(ret, indent=4), file=f)
+
+
+
 
 if __name__ == '__main__':
     sys.exit(main())
