@@ -46,6 +46,10 @@ def main():
     lats = [25.5]
     lons = [-81]
 
+    # Add a point which should not be impacted.
+    lats.append(40)
+    lons.append(-100)
+
     ret = metryc_point(access_token, lats, lons, tag="Everglades")
     with open('Everglades_Metryc_Present_Day_API_Sample.json', 'w') as f:
         print(json.dumps(ret, indent=4), file=f)
