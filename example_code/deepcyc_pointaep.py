@@ -8,19 +8,19 @@ import time
 from auth import get_access_token
 
 
-def deepcyc_pointep(access_token, lats, lons, epoch=None, tag=None):
+def deepcyc_pointaep(access_token, lats, lons, epoch=None, tag=None):
 
     if type(lats) != type([]):
         lats = [lats]
         lons = [lons]
 
-    url = 'https://api.reask.earth/v1/deepcyc/pointep'
+    url = 'https://api.reask.earth/v1/deepcyc/pointaep'
     params = {
         'access_token': access_token,
         'peril': 'TC_Wind',
         'lats': lats,
         'lons': lons,
-        'years': [5, 10, 25, 50, 100, 250]
+        'aeps': [0.05, 0.02, 0.01]
     }
     if tag is not None:
         params['tag'] = tag
@@ -30,11 +30,13 @@ def deepcyc_pointep(access_token, lats, lons, epoch=None, tag=None):
     start_time = time.time()
     res = requests.get(url, params=params)
 
+    print(res.url)
+
     if res.status_code != 200:
         print(res.text)
         return None
 
-    print('pointep took {}ms'.format(round((time.time() - start_time) * 1000)))
+    print('pointaep took {}ms'.format(round((time.time() - start_time) * 1000)))
 
     return res.json()
 
@@ -66,7 +68,7 @@ def main():
         lats.append(rand_coord(min_lat, max_lat))
         lons.append(rand_coord(min_lon, max_lon))
 
-    ret = deepcyc_pointep(access_token, lats, lons, tag='Japan')
+    ret = deepcyc_pointaep(access_token, lats, lons, tag='Japan')
     with open('DeepCyc_Present_Day_API_Sample.json', 'w') as f:
         print(json.dumps(ret, indent=4), file=f)
 

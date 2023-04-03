@@ -55,7 +55,5 @@ def main():
         print(json.dumps(ret, indent=4), file=f)
 
 
-
-
 if __name__ == '__main__':
     sys.exit(main())

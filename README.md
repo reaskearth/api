@@ -22,7 +22,7 @@ username = <USERNAME_OR_EMAIL>
 password = <PASSWORD>
 ```
 
-Check the permissions of this file and make sure it is only readable by yourself. 
+Check the permissions of this file and make sure it is only readable by yourself.
 
 Take a look at the Python3 example code here: https://github.com/reaskearth/api/ . This can be downloaded by either clicking on the green **Code** button or using the `git` command as follows:
 
@@ -34,8 +34,9 @@ Once downloaded it can be run with:
 
 ```
 cd reask-api/example_code
-python3 ./deepcyc_pointep.py
-python3 ./deepcyc_gateep.py
+python3 ./deepcyc_point.py
+python3 ./deepcyc_pointaep.py
+python3 ./deepcyc_gateaep.py
 ```
 
 This should leave a `.json` file in the current directory containing the results.
@@ -73,147 +74,32 @@ The `access_token` value is then used as a `GET` request parameter as shown in t
 
 ## DeepCyc Usage
 
-The DeepCyc API has four endpoints **pointep**, **gateep**, **point** and **gate**.
-
-### PointEP (Point Exceedance Probability)
-
-`v1/deepcyc/pointep` returns TC surface windspeeds at a requested latitude, longitude point and return period (inverse of the exceedance probability). The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
-
-```Python
-url = 'https://api.reask.earth/v1/deepcyc/pointep'
-params = {
-    'access_token': auth_res['access_token'], # access token from auth step
-    'peril': 'TC_Wind',
-    'tag': 'Miami Beach',
-    'epoch': 'Present_Day',
-    'lats': [25.80665],
-    'lons': [-80.12412],
-    'years': [10, 100, 250]
-}
-
-res = requests.get(url, params=params)
-assert res.status_code == 200, 'API GET request failed'
-```
-
-Returns:
-
-```Python
-{
-    "data": [
-        {
-            "latitude:": 25.80665,
-            "longitude:" -80.12412,
-            "cell_latitude": 25.8056640625,
-            "cell_longitude": -80.1318359375,
-            "return_period_year": 10,
-            "windspeed_ft_3sec_kph": 128
-        },
-        {
-            "latitude:": 25.80665,
-            "longitude:" -80.12412,
-            "cell_latitude": 25.8056640625,
-            "cell_longitude": -80.1318359375,
-            "return_period_year": 100,
-            "windspeed_ft_3sec_kph": 212
-        },
-        {
-            "latitude:": 25.80665,
-            "longitude:" -80.12412,
-            "cell_latitude": 25.8056640625,
-            "cell_longitude": -80.1318359375,
-            "return_period_year": 250,
-            "windspeed_ft_3sec_kph": 237
-        }
-    ],
-    "epoch": "Present_Day",
-    "product": "DeepCyc-2.0.5",
-    "simulation_years": 20000,
-    "tag": "Miami Beach"
-}
-```
-
-Since the API supports providing lists of both requested return periods and locations the data returned is in the form of a list with items corrosponding to the requested parameters. Each list item has the following fields:
-
-- `latitude` and `longitude`: the latitude and longitude of the requested location.
-- `cell_latitude` and `cell_longitude`: the center point of the cell that encompasses the requested location. Reask uses a global, regular lat, lon grid with roughly 1km resolution for all wind hazard products. Given this resolution the cell coordinates returned will never be more than around 700m from the requested location.
-- `return_period_year`: the return period of the given windspeed.
-- `windspeed_ft_3sec_kph`: the windspeed value for the given location and return period. In this case the value is terrain-corrected 3-second gust in units of kilometers per hour.
-
-If a requested location is not available, e.g because it is not considered at risk or outside the allowed region, then the API request will still succeed but the values returned with will `NA` and a `message` field will provide some explanation.
-
-### GateEP (Gate Exceedance Probability)
-
-`v1/deepcyc/gateep` returns TC maximum surface windspeeds crossing/entering a gate at a specified return period. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
-
-```Python
-url = 'https://api.reask.earth/v1/deepcyc/gateep'
-params = {
-    'access_token': auth_res['access_token'], # access token from auth step
-    'peril': 'TC_Wind',
-    'epoch': 'Present_Day',
-    'gate': 'circle'
-    'lats': [30],
-    'lons': [-90.0],
-    'radius_km': 50,
-    'years': [20, 50, 200]
-}
-
-res = requests.get(url, params=params)
-assert res.status_code == 200, 'API GET request failed'
-```
-
-Returns:
-
-```Python
-{
-    "data": [
-        {
-            "return_period_year": 20,
-            "windspeed_nt_1min_kph": 197
-        },
-        {
-            "return_period_year": 50,
-            "windspeed_nt_1min_kph": 234
-        },
-        {
-            "return_period_year": 100,
-            "windspeed_nt_1min_kph": 256
-        }
-    ],
-    "epoch": "Present_Day",
-    "gate": "circle",
-    "lats": [
-        29.0
-    ],
-    "lons": [
-        -90.0
-    ],
-    "product": "DeepCyc-2.0.3",
-    "radius_km": 50.0,
-    "simulation_years": 20000
-}
-```
-
-The parameters provided depend on the 'gate' type. They are as follows:
-
-- `circle`: requires a single `lat` and `lon` point representing the centre as well as a `radius_km`.
-- `polygon`: requires a list of `lat` and `lon` pairs representing the corners of the shape. The first and last points must be the same.
-- `line`: requires two or more points representing a multi-segment line. The example code (https://github.com/reaskearth/api/blob/main/example_code/gate_ep.py) shows a line following the coast around New Orleans, USA.
+The DeepCyc API has four endpoints **point**, **gate**, **pointaep** and **gateaep**.
 
 ### Point
 
-`v1/deepcyc/point` returns maximum TC surface windspeeds of all (synthetic) events impacting a given latitude, longitude point during the given epoch. The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. For example:
+`v1/deepcyc/point` returns maximum TC surface windspeeds of all (synthetic) events impacting a given latitude, longitude point during the given epoch. The windspeeds can be returned with a range of different terrain corrections:
 
+- `ft_gust`: Full Terrain 3-second gust correction. Uses our ML terrain correction algorithm to calculate over-land gust depending on such things as land-use, topography, wind direction etc.
+- `ow`: Open Water. No correction is applied.
+- `nt`: No Terrain. As above, no correction is applied.
+- `ot`: Open Terrain. An flat grassland correction is applied.
+
+In addition either a `3-second` or `1-minute` wind averaging period can be selected. For the `ft_gust` terrain type only `3-second` wind averaging is supported.
+
+For example:
 
 ```Python
 url = 'https://api.reask.earth/v1/deepcyc/point'
 params = {
     'access_token': auth_res['access_token'], # access token from auth step
     'peril': 'TC_Wind',
-    'tag': 'Miami Beach',
     'epoch': 'Present_Day',
-    'lats': [25.80665],
-    'lons': [-80.12412],
+    'terrain_correction': 'ft_gust',
+    'wind_averaging_period': '3-seconds',
+    'units': 'mph',
+    'lats': [25.8],
+    'lons': [-79.5],
 }
 
 res = requests.get(url, params=params)
@@ -224,40 +110,40 @@ Returns:
 
 ```Python
 {
+    "epoch": "Present_Day",
+    "product": "DeepCyc-2.0.6",
+    "simulation_years": 40500,
+    "terrain_correction": "ft_gust",
+    "units": "mph",
+    "wind_averaing_period": "3-second",
     "data": [
         {
-            "latitude:": 25.80665,
-            "longitude:" -80.12412,
-            "cell_latitude": 25.8056640625,
-            "cell_longitude": -80.1318359375,
-            "year_id": 2013_0117_1051,
-            "event_id": FU_NV_i2.0.5__FBHEPR_YRAF2__RAF_1051.003__Onfva_NV__FhoErtvba_12__Frnfba_2013__Fnzcyr_0117__Genpx_00000008
-            "windspeed_ft_3sec_kph": 128
-        },
-        {
-            "latitude:": 25.80665,
-            "longitude:" -80.12412,
-            "cell_latitude": 25.8056640625,
-            "cell_longitude": -80.1318359375,
-            "year_id": 2012_0086_1111,
-            "event_id": FU_NV_i2.0.5__FBHEPR_YRAF2__RAF_1111.006__Onfva_NV__FhoErtvba_12__Frnfba_2012__Fnzcyr_0086__Genpx_00000008,
-            "windspeed_ft_3sec_kph": 212
-        },
-        {
-            "latitude:": 25.80665,
-            "longitude:" -80.12412,
-            "cell_latitude": 25.8056640625,
-            "cell_longitude": -80.1318359375,
-            "year_id": 2015_0021_1131,
-            "event_id": FU_NV_i2.0.5__FBHEPR_YRAF2__RAF_1131.007__Onfva_NV__FhoErtvba_12__Frnfba_2015__Fnzcyr_0021__Genpx_00000005,
-            "windspeed_ft_3sec_kph": 237
+            "latitude": 25.8,
+            "longitude": -79.5
+            "cell_latitude": 25.7958984375,
+            "cell_longitude": -79.4970703125,
+            "events": {
+                "event_ids": [
+                    "850e65031871c7cdd56d",
+                    "25f9b79f2cff331a6fe3",
+                    "74f1cf4ffb7a51fa62bb",
+                    ...
+                 ]
+                 "year_ids": [
+                    "1980_0211",
+                    "1981_0107",
+                    "1981_0330",
+                    ...
+                 ]
+                 "windspeeds": [
+                    37.28226,
+                    37.28226,
+                    37.28226,
+                    ...
+                 ]
+            }
         }
-        ...
     ],
-    "epoch": "Present_Day",
-    "product": "DeepCyc-2.0.5",
-    "simulation_years": 20000,
-    "tag": "Miami Beach"
 }
 ```
 
@@ -266,7 +152,7 @@ Not that the above list has been shortened.
 
 ### Gate
 
-`v1/deepcyc/gate` returns TC maximum surface windspeeds for all events crossing or within a gate during a given epoch. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
+`v1/deepcyc/gate` returns TC maximum surface windspeeds for all events crossing or within a gate during a given epoch. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction / open water. For example:
 
 ```Python
 url = 'https://api.reask.earth/v1/deepcyc/gate'
@@ -289,18 +175,145 @@ Returns:
 ```Python
 {
     "data": [
-        {
-            "windspeed_nt_1min_kph": 197
-            "year_id": 2019_0175_1301,
-            "event_id": FU_NH_i2.0.5__FBHEPR_YRAF2__RAF_1301.020__Onfva_NH__FhoErtvba_13__Frnfba_2019__Fnzcyr_0175__Genpx_00000001
-        },
-        {
-            "windspeed_nt_1min_kph": 234
-            "year_id": 2015_0021_1131,
-            "event_id": FU_NV_i2.0.5__FBHEPR_YRAF2__RAF_1131.007__Onfva_NV__FhoErtvba_12__Frnfba_2015__Fnzcyr_0021__Genpx_00000005
-        },
+        "events": {
+            "event_ids": [
+                "766d200e57773b36c5ad",
+                ...
+             ]
+             "year_ids": [
+                "2019_0175",
+                ...
+             ]
+             "windspeeds": [
+                67.28226,
+                ...
+             ]
+        }
+    ],
+    "epoch": "Present_Day",
+    "gate": "circle",
+    "lats": [
+        29.0
+    ],
+    "lons": [
+        -90.0
+    ],
+    "wind_averaging_period": "1-minute",
+    "terrain_correction": "ow",
+    "product": "DeepCyc-2.0.3",
+    "radius_km": 50.0,
+    "units": "kmh",
+    "simulation_years": 20000
+}
+```
 
-        ...
+
+### Point AEP (Point Annual Exceedance Probability)
+
+`v1/deepcyc/pointaep` returns TC surface windspeeds at a requested latitude, longitude point and annual exceedance probability. As with the `point` endpoint the windspeeds can be returned as either different terrain corrections, wind averaging periods and units.
+
+```Python
+url = 'https://api.reask.earth/v1/deepcyc/pointep'
+params = {
+    'access_token': auth_res['access_token'], # access token from auth step
+    'peril': 'TC_Wind',
+    'tag': 'Miami Beach',
+    'epoch': 'Present_Day',
+    'lats': [25.80665],
+    'lons': [-80.12412],
+    'aeps': [0.1, 0.01, 0.004]
+}
+
+res = requests.get(url, params=params)
+assert res.status_code == 200, 'API GET request failed'
+```
+
+Returns:
+
+```Python
+{
+    "data": [
+        {
+            "latitude:": 25.80665,
+            "longitude:" -80.12412,
+            "cell_latitude": 25.8056640625,
+            "cell_longitude": -80.1318359375,
+            "aep": 0.1,
+            "windspeed": 128
+        },
+        {
+            "latitude:": 25.80665,
+            "longitude:" -80.12412,
+            "cell_latitude": 25.8056640625,
+            "cell_longitude": -80.1318359375,
+            "aep": 0.01,
+            "windspeed": 212
+        },
+        {
+            "latitude:": 25.80665,
+            "longitude:" -80.12412,
+            "cell_latitude": 25.8056640625,
+            "cell_longitude": -80.1318359375,
+            "aep": 0.004,
+            "windspeed": 237
+        }
+    ],
+    "epoch": "Present_Day",
+    "product": "DeepCyc-2.0.5",
+    "simulation_years": 20000,
+    "tag": "Miami Beach"
+}
+```
+
+Since the API supports providing lists of both requested return periods and locations the data returned is in the form of a list with items corrosponding to the requested parameters. Each list item has the following fields:
+
+- `latitude` and `longitude`: the latitude and longitude of the requested location.
+- `cell_latitude` and `cell_longitude`: the center point of the cell that encompasses the requested location. Reask uses a global, regular lat, lon grid with roughly 1km resolution for all wind hazard products. Given this resolution the cell coordinates returned will never be more than around 700m from the requested location.
+- `aep`: the annual exceedance probability of the given windspeed.
+- `windspeed`: the windspeed value for the given location and return period.
+- `terrrain_correction`: terrain correction used.
+- `wind_averaging_period`
+
+If a requested location is not available, e.g because it is not considered at risk or outside the allowed region, then the API request will still succeed but the values returned with will `NA` and a `message` field will provide some explanation.
+
+### Gate AEP (Gate Annual Exceedance Probability)
+
+`v1/deepcyc/gateaep` returns TC maximum surface windspeeds crossing/entering a gate at a specified annual exceedance probability. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
+
+```Python
+url = 'https://api.reask.earth/v1/deepcyc/gateep'
+params = {
+    'access_token': auth_res['access_token'], # access token from auth step
+    'peril': 'TC_Wind',
+    'epoch': 'Present_Day',
+    'gate': 'circle'
+    'lats': [30],
+    'lons': [-90.0],
+    'radius_km': 50,
+    'aeps': [0.05, 0.02, 0.005]
+}
+
+res = requests.get(url, params=params)
+assert res.status_code == 200, 'API GET request failed'
+```
+
+Returns:
+
+```Python
+{
+    "data": [
+        {
+            "aep": 0.05,
+            "windspeed": 197
+        },
+        {
+            "aep": 0.02,
+            "windspeed": 234
+        },
+        {
+            "aep": 0.005,
+            "windspeed": 256
+        }
     ],
     "epoch": "Present_Day",
     "gate": "circle",
@@ -315,6 +328,13 @@ Returns:
     "simulation_years": 20000
 }
 ```
+
+The parameters provided depend on the 'gate' type. They are as follows:
+
+- `circle`: requires a single `lat` and `lon` point representing the centre as well as a `radius_km`.
+- `polygon`: requires a list of `lat` and `lon` pairs representing the corners of the shape. The first and last points must be the same.
+- `line`: requires two or more points representing a multi-segment line. The example code (https://github.com/reaskearth/api/blob/main/example_code/gate_ep.py) shows a line following the coast around New Orleans, USA.
+
 
 ## Metryc Usage
 
