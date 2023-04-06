@@ -8,7 +8,8 @@ import time
 from auth import get_access_token
 
 
-def deepcyc_pointaep(access_token, lats, lons, epoch=None, tag=None):
+def deepcyc_pointaep(access_token, lats, lons, aeps=None, years=None,
+                     windspeeds=None, epoch=None, tag=None):
 
     if type(lats) != type([]):
         lats = [lats]
@@ -20,8 +21,16 @@ def deepcyc_pointaep(access_token, lats, lons, epoch=None, tag=None):
         'peril': 'TC_Wind',
         'lats': lats,
         'lons': lons,
-        'aeps': [0.05, 0.02, 0.01]
     }
+    if aeps is not None:
+        params['aeps'] = aeps
+    elif years is not None:
+        params['years'] = years
+    elif windspeeds is not None:
+        params['windspeeds'] = windspeeds
+    else:
+        assert False, 'Provide one of aeps, years, windspeeds'
+
     if tag is not None:
         params['tag'] = tag
     if epoch is not None:
@@ -29,8 +38,6 @@ def deepcyc_pointaep(access_token, lats, lons, epoch=None, tag=None):
 
     start_time = time.time()
     res = requests.get(url, params=params)
-
-    print(res.url)
 
     if res.status_code != 200:
         print(res.text)
@@ -46,11 +53,10 @@ def rand_coord(start, stop):
 def main():
 
     access_token = get_access_token()
-    # Random points in central Japan
-    min_lat = 32.5
-    max_lat = 37.5
-    min_lon = 130.0
-    max_lon = 140.0
+    min_lat = 25.
+    max_lat = 27.5
+    min_lon = -82.5
+    max_lon = -80.0
 
     lats = []
     lons = []
@@ -58,18 +64,17 @@ def main():
         lats.append(rand_coord(min_lat, max_lat))
         lons.append(rand_coord(min_lon, max_lon))
 
-    # Random points around Tampa Florida
-    min_lat = 26.9921875
-    max_lat = 28.984375
-    min_lon = -83.0078125
-    max_lon = -81.005859375
+    aeps = [0.1, 0.01, 0.004]
+    ret = deepcyc_pointaep(access_token, lats, lons, aeps=aeps)
+    ws = ret['features'][0]['properties']['windspeeds']
 
-    for i in range(10):
-        lats.append(rand_coord(min_lat, max_lat))
-        lons.append(rand_coord(min_lon, max_lon))
+    years = [10, 100, 250]
+    ret = deepcyc_pointaep(access_token, lats, lons, years=years)
+    assert ret['features'][0]['properties']['windspeeds'] == ws
 
-    ret = deepcyc_pointaep(access_token, lats, lons, tag='Japan')
-    with open('DeepCyc_Present_Day_API_Sample.json', 'w') as f:
+    ret = deepcyc_pointaep(access_token, lats, lons, windspeeds=ws)
+
+    with open('DeepCyc_PointAEP_API_Sample.json', 'w') as f:
         print(json.dumps(ret, indent=4), file=f)
 
 

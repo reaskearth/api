@@ -28,8 +28,6 @@ def deepcyc_point(access_token, lats, lons, epoch='Present_Day', tag=None):
     start_time = time.time()
     res = requests.get(url, params=params)
 
-    print(res.url)
-
     if res.status_code != 200:
         print(res.text)
         return None
@@ -46,20 +44,20 @@ def main():
     access_token = get_access_token()
 
     # Random points in Florida
-    min_lat = 25.9921875
-    max_lat = 26.984375
-    min_lon = -79.5
-    max_lon = -79.005859375
+    min_lat = 25.
+    max_lat = 27.5
+    min_lon = -82.5
+    max_lon = -80.0
 
     lats = []
     lons = []
-    #for i in range(10):
-    for i in range(1):
+    for i in range(2):
+    #for i in range(100):
         lats.append(rand_coord(min_lat, max_lat))
         lons.append(rand_coord(min_lon, max_lon))
 
     ret = deepcyc_point(access_token, lats, lons, tag='Florida')
-    with open('DeepCyc_Present_Day_Florida_API_Sample.json', 'w') as f:
+    with open('DeepCyc_Point_Florida_Sample.json', 'w') as f:
         print(json.dumps(ret, indent=4), file=f)
 
 
