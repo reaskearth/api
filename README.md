@@ -150,7 +150,7 @@ Returns:
 
 The returned document is a valid GeoJSON document describing the geometry of the requested locations (also known as `features`). The `properties` attribute of each feature contains the following fields:
 
-- `cell_id`: this is a globally unique identifier for the returned grid cell.
+- `cell_id`: this is a globally unique identifier for the returned grid cell. There is example code showing how to map these ids to and from cells at `example_code/grid_cell_id_map.py`.
 - `event_ids`: a list of identifiers for the events that have impacted the requested location.
 - `windspeeds`: the maximum windspeeds of the aforementioned events at the requested location.
 - `years_ids`: the identifiers of the synthetic years in which the aforementioned events occur.
