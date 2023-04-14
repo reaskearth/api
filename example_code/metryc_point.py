@@ -15,8 +15,8 @@ def metryc_point(access_token, lats, lons, tag=None):
     url = 'https://api.reask.earth/v1/metryc/point'
     params = {
         'access_token': access_token,
-        'latitudes': lats,
-        'longitudes': lons,
+        'lats': lats,
+        'lons': lons,
     }
     if tag is not None:
         params['tag'] = tag
@@ -43,15 +43,15 @@ def main():
     with open('Jackson_Square_Metryc_Present_Day_API_Sample.json', 'w') as f:
         print(json.dumps(ret, indent=4), file=f)
 
-    lats = [25.5]
-    lons = [-81]
+    lats = [27.11]
+    lons = [-82.46]
 
     # Add a point which should not be impacted.
-    lats.append(40)
-    lons.append(-100)
+    #lats.append(40)
+    #lons.append(-100)
 
-    ret = metryc_point(access_token, lats, lons, tag="Everglades")
-    with open('Everglades_Metryc_Present_Day_API_Sample.json', 'w') as f:
+    ret = metryc_point(access_token, lats, lons, tag="Tampa")
+    with open('Tampa_Metryc_Present_Day_API_Sample.json', 'w') as f:
         print(json.dumps(ret, indent=4), file=f)
 
 
