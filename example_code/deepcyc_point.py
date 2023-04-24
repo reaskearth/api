@@ -3,11 +3,16 @@ import sys
 import requests
 import random
 import json
+import numpy as np
 import time
 
 from auth import get_access_token
 
-def deepcyc_point(access_token, lats, lons, epoch='Present_Day', tag=None):
+def deepcyc_point(access_token, lats, lons, terrain_correction='OW',
+                  windspeed_averaging_period='1-minute', epoch='Present_Day', tag=None):
+
+    assert terrain_correction in ['OW', 'OT', 'AOT', 'FT_GUST']
+    assert windspeed_averaging_period in ['3-seconds', '1-minute']
 
     if type(lats) != type([]):
         lats = [lats]
@@ -19,6 +24,8 @@ def deepcyc_point(access_token, lats, lons, epoch='Present_Day', tag=None):
         'peril': 'TC_Wind',
         'lats': lats,
         'lons': lons,
+        'windspeed_averaging_period': windspeed_averaging_period,
+        'terrain_correction': terrain_correction
     }
     if tag is not None:
         params['tag'] = tag
@@ -52,13 +59,16 @@ def main():
     lats = []
     lons = []
     for i in range(2):
-    #for i in range(100):
         lats.append(rand_coord(min_lat, max_lat))
         lons.append(rand_coord(min_lon, max_lon))
 
-    ret = deepcyc_point(access_token, lats, lons, tag='Florida')
-    with open('DeepCyc_Point_Florida_Sample.json', 'w') as f:
-        print(json.dumps(ret, indent=4), file=f)
+    ow = deepcyc_point(access_token, lats, lons, terrain_correction='OW', 
+                       windspeed_averaging_period='1-minute', tag='Florida')
+    ow_ws = ow['features'][0]['properties']['windspeeds']
+
+    ot = deepcyc_point(access_token, lats, lons, terrain_correction='OT', 
+                       windspeed_averaging_period='1-minute', tag='Florida')
+    ot_ws = ot['features'][0]['properties']['windspeeds']
 
 
 if __name__ == '__main__':

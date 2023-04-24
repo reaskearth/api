@@ -65,17 +65,24 @@ def main():
         lons.append(rand_coord(min_lon, max_lon))
 
     aeps = [0.1, 0.01, 0.004]
-    ret = deepcyc_pointaep(access_token, lats, lons, aeps=aeps)
-    ws = ret['features'][0]['properties']['windspeeds']
+    r1 = deepcyc_pointaep(access_token, lats, lons, aeps=aeps)
+    f1 = sorted(r1['features'], key=lambda f: f['properties']['cell_id'])
 
     years = [10, 100, 250]
-    ret = deepcyc_pointaep(access_token, lats, lons, years=years)
-    assert ret['features'][0]['properties']['windspeeds'] == ws
+    r2 = deepcyc_pointaep(access_token, lats, lons, years=years)
+    f2 = sorted(r1['features'], key=lambda f: f['properties']['cell_id'])
 
-    ret = deepcyc_pointaep(access_token, lats, lons, windspeeds=ws)
+    assert f1[0]['properties']['windspeeds'] == \
+            f2[0]['properties']['windspeeds']
+
+    ws = f1[0]['properties']['windspeeds']
+    r3 = deepcyc_pointaep(access_token, lats, lons, windspeeds=ws)
+    f3 = sorted(r1['features'], key=lambda f: f['properties']['cell_id'])
+
+    assert f3[0]['properties']['aeps'] == aeps
 
     with open('DeepCyc_PointAEP_API_Sample.json', 'w') as f:
-        print(json.dumps(ret, indent=4), file=f)
+        print(json.dumps(r3, indent=4), file=f)
 
 
 if __name__ == '__main__':

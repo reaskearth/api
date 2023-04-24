@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 example_code/*.json
+example_code/test_results/*.json
 
 # C extensions
 *.so
