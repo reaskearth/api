@@ -95,7 +95,7 @@ params = {
     'peril': 'TC_Wind',
     'epoch': 'Present_Day',
     'terrain_correction': 'ft_gust',
-    'wind_averaging_period': '3-seconds',
+    'windspeed_averaging_period': '3-seconds',
     'units': 'mph',
     'lats': [25.8],
     'lons': [-79.5],
@@ -116,7 +116,7 @@ Returns:
         "tag": "Florida",
         "terrain_correction": "ft_gust",
         "units": "kph",
-        "wind_averaing_period": "3-seconds"
+        "windspeed_averaing_period": "3-seconds"
     },
     "type": "FeatureCollection"
     "features": [
@@ -196,7 +196,7 @@ Returns:
         "tag": "Florida",
         "terrain_correction": "ft_gust",
         "units": "kph",
-        "wind_averaing_period": "3-seconds"
+        "windspeed_averaing_period": "3-seconds"
     },
     "type": "FeatureCollection"
     "features": [

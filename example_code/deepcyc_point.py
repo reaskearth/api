@@ -62,13 +62,15 @@ def main():
         lats.append(rand_coord(min_lat, max_lat))
         lons.append(rand_coord(min_lon, max_lon))
 
-    ow = deepcyc_point(access_token, lats, lons, terrain_correction='OW', 
+    ow = deepcyc_point(access_token, lats, lons, terrain_correction='OW',
                        windspeed_averaging_period='1-minute', tag='Florida')
     ow_ws = ow['features'][0]['properties']['windspeeds']
 
-    ot = deepcyc_point(access_token, lats, lons, terrain_correction='OT', 
-                       windspeed_averaging_period='1-minute', tag='Florida')
-    ot_ws = ot['features'][0]['properties']['windspeeds']
+    ow_gust = deepcyc_point(access_token, lats, lons, terrain_correction='OW',
+                       windspeed_averaging_period='3-seconds', tag='Florida')
+    ow_gust_ws = ow_gust['features'][0]['properties']['windspeeds']
+
+    assert (np.array(ow_gust_ws) > np.array(ow_ws)).all()
 
 
 if __name__ == '__main__':
