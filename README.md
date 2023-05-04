@@ -27,13 +27,13 @@ Check the permissions of this file and make sure it is only readable by yourself
 Take a look at the Python3 example code here: https://github.com/reaskearth/api/ . This can be downloaded by either clicking on the green **Code** button or using the `git` command as follows:
 
 ```
-git clone https://github.com/reaskearth/api.git reask-api
+git clone https://github.com/reaskearth/api.git reaskapi
 ```
 
 Once downloaded it can be run with:
 
 ```
-cd reask-api/example_code
+cd reaskapi/example_code
 python3 ./deepcyc_point.py
 python3 ./deepcyc_pointaep.py
 ```
@@ -71,7 +71,23 @@ Will output:
 
 The `access_token` value is then used as a `GET` request parameter as shown in the following code snippets. The example code (https://github.com/reaskearth/api/blob/main/example_code/auth.py) demonstrates how to use credentials which are stored in a hidden file.
 
-## DeepCyc Usage
+
+## API Tools Usage
+
+The `tools/` directory contains some command line utilities that make it easy to use the API for common tasks.
+
+*get_hazard_csv.py*: will generate a CSV containing hazard values for provided locations. It supports both DeepCyc for probabilistic risk as well as Metrcy for estimates of historical events. To use first set-up the authenitcation as described above then try the following:
+
+```Bash
+git clone https://github.com/reaskearth/api.git reaskapi
+cd reaskapi
+pip install -r requirements.txt
+cd tools
+python get_hazard_csv.py --rp_year 20 --location_csv locations.csv  --output_filename DeepCyc_RP20y.csv --product DeepCyc
+```
+
+
+## DeepCyc Endpoint Usage
 
 The DeepCyc API has four endpoints **point**, **pointaep**, **gate** and **gateaep**.
 
@@ -268,7 +284,7 @@ res = requests.get(url, params=params)
 assert res.status_code == 200, 'API GET request failed'
 ```
 
-## Metryc Usage
+## Metryc Endpoint Usage
 
 The Metryc API supports **point** and **gate** endpoints.
 

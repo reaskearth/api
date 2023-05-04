@@ -93,8 +93,12 @@ def main():
     args = parser.parse_args()
 
     if not args.location_csv:
-        assert args.latitudes != []
-        assert args.longitudes != []
+        if args.latitudes == []:
+            print('Error: please use one of  --location_csv or --latitudes, --longitudes')
+            parser.print_help()
+            return 1
+
+        assert len(args.latitudes) == len(args.longitudes)
 
         lats = args.latitudes
         lons = args.longitudes
