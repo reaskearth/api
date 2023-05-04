@@ -5,6 +5,7 @@ __pycache__/
 
 example_code/*.json
 example_code/test_results/*.json
+*.swp
 
 # C extensions
 *.so
