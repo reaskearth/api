@@ -24,7 +24,7 @@ class DeepCyc(ApiClient):
         if epoch is not None:
             params['epoch'] = epoch
 
-        return self._call_api(params, 'point', tag)
+        return self._call_api(params, 'point')
 
 
     def pointep(self, lats, lons, years=None, windspeeds=None,
@@ -71,7 +71,7 @@ class DeepCyc(ApiClient):
         if epoch is not None:
             params['epoch'] = epoch
 
-        return self._call_api(params, 'gateaep', tag)
+        return self._call_api(params, 'gateaep')
 
 
     def gate(self, gate, lats, lons, radius_km=50, epoch='Present_Day', tag=None):
@@ -91,4 +91,4 @@ class DeepCyc(ApiClient):
         if epoch is not None:
             params['epoch'] = epoch
 
-        return self._call_api(params, 'gate', tag)
+        return self._call_api(params, 'gate')
