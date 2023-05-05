@@ -85,7 +85,7 @@ python3 -m venv venv
 . venv/bin/activate
 pip install -r requirements.txt
 cd tools
-python get_hazard_csv.py --rp_year 20 --location_csv locations.csv  --output_filename DeepCyc_RP20y.csv --product DeepCyc
+python3 get_hazard_csv.py --rp_year 20 --location_csv locations.csv  --output_filename DeepCyc_RP20y.csv --product DeepCyc
 ```
 
 
