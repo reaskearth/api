@@ -19,8 +19,8 @@ def generate_random_points():
     lats = []
     lons = []
     for i in range(1000):
-        lat = random.randrange(round(min_lat*1000), round(max_lat*1000)) / 1000
-        lon = random.randrange(round(min_lon*1000), round(max_lon*1000)) / 1000
+        lat = random.randrange(round(min_lat*1e6), round(max_lat*1e6)) / 1e6
+        lon = random.randrange(round(min_lon*1e6), round(max_lon*1e6)) / 1e6
         lats.append(lat)
         lons.append(lon)
 
@@ -44,6 +44,7 @@ def test_florida_pointep():
 
     lats, lons = generate_random_points()
     years = [10, 20, 100, 250, 500]
+
     ret = dc.pointep(lats, lons, years=years)
 
     df = gpd.GeoDataFrame.from_features(ret).set_index('cell_id')
