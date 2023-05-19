@@ -6,6 +6,10 @@ import geopandas as gpd
 
 from auth import get_access_token
 
+"""
+This example shows how to load Metryc storm footprints from the OGC Features API.
+"""
+
 def metryc_collections(access_token, bbox, do_load=False):
     """
     Load Metryc TC footprint features in the given bbox.
