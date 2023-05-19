@@ -50,7 +50,7 @@ def main():
     tampa_florida_bbox = {'min_lat': 27.0, 'max_lat': 28.0,
                           'min_lon': -83.0, 'max_lon': -82.0}
 
-    metryc_collections(access_token, tampa_florida_bbox, do_load=True, do_save=False)
+    metryc_collections(access_token, tampa_florida_bbox, do_load=True)
 
 
 if __name__ == '__main__':
