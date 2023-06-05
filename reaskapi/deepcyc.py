@@ -24,6 +24,8 @@ class DeepCyc(ApiClient):
         if epoch is not None:
             params['epoch'] = epoch
 
+        self.logger.debug(f'Parameters: {params}')
+
         return self._call_api(params, 'point')
 
 
@@ -32,7 +34,6 @@ class DeepCyc(ApiClient):
                 windspeed_averaging_period='3-seconds', tag=None):
 
         params = {
-            'access_token': self.access_token,
             'peril': 'TC_Wind',
             'lats': lats,
             'lons': lons,
@@ -46,6 +47,9 @@ class DeepCyc(ApiClient):
         if tag is not None:
             params['tag'] = tag
 
+        self.logger.debug(f'Parameters: {params}')
+
+        params['access_token'] = self.access_token
         return self._call_api(params, 'pointaep')
 
 
