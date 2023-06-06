@@ -31,6 +31,17 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+    - name: Set up credentials
+      env:
+        USERNAME: ${{ secrets.REASK_API_USERNAME }}
+        PASSWORD: ${{ secrets.REASK_API_PASSWORD }}
+      run: |
+        mkdir -p ~/.reask
+        echo "[default]" > ~/.reask
+        echo "username = ${USERNAME}" >> ~/.reask
+        echo "password = ${PASSWORD}" >> ~/.reask
+        chmod 600 ~/.reask
+    
     - name: Run pytests
       run: |
         cd tests
