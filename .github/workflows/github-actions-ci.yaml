@@ -44,4 +44,4 @@ jobs:
     - name: Run pytests
       run: |
         cd tests
-        pytest test_metryc.py
+        pytest -vs

@@ -26,15 +26,14 @@ class DeepCyc(ApiClient):
 
         self.logger.debug(f'Parameters: {params}')
 
-        return self._call_api(params, 'point')
+        return self._call_api(params, 'deepcyc/point')
 
 
-    def pointep(self, lats, lons, years=None, windspeeds=None,
+    def pointaep(self, lats, lons, years=None, windspeeds=None,
                 terrain_correction='FT_GUST',
                 windspeed_averaging_period='3-seconds', tag=None):
 
         params = {
-            'peril': 'TC_Wind',
             'lats': lats,
             'lons': lons,
             'terrain_correction': terrain_correction,
@@ -49,16 +48,13 @@ class DeepCyc(ApiClient):
 
         self.logger.debug(f'Parameters: {params}')
 
-        params['access_token'] = self.access_token
-        return self._call_api(params, 'pointaep')
+        return self._call_api(params, 'deepcyc/pointaep')
 
 
     def gateep(self, gate, lats, lons, radius_km=50, years=None, windspeeds=None,
                epoch='Present_Day', tag=None):
 
         params = {
-            'access_token': self.access_token,
-            'peril': 'TC_Wind',
             'lats': lats,
             'lons': lons,
             'gate': gate,
@@ -81,8 +77,6 @@ class DeepCyc(ApiClient):
     def gate(self, gate, lats, lons, radius_km=50, epoch='Present_Day', tag=None):
 
         params = {
-            'access_token': self.access_token,
-            'peril': 'TC_Wind',
             'lats': lats,
             'lons': lons,
             'gate': gate,
@@ -95,4 +89,4 @@ class DeepCyc(ApiClient):
         if epoch is not None:
             params['epoch'] = epoch
 
-        return self._call_api(params, 'gate')
+        return self._call_api(params, 'deepcyc/gate')
