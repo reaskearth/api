@@ -75,7 +75,7 @@ class DeepCyc(ApiClient):
         if epoch is not None:
             params['epoch'] = epoch
 
-        return self._call_api(params, 'gateaep')
+        return self._call_api(params, 'deepcyc/gateaep')
 
 
     def gate(self, gate, lats, lons, radius_km=50, epoch='Present_Day', tag=None):
