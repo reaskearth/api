@@ -12,6 +12,12 @@ Further information can be found on our website (https://reask.earth/products/).
 
 An up-to-date version of this README can be found here: https://github.com/reaskearth/api/blob/main/README.md
 
+## Package Status
+
+| Branch | Status |
+|--------|--------|
+| Development | ![Build Status](https://github.com/fabioreask/api/actions/workflows/github-actions-ci.yaml/badge.svg)](https://github.com/fabioreask/api/actions/workflows/github-actions-ci.yaml) |
+
 ## Quickstart
 
 Put your Reask credentials into a file called `.reask` in your home directory using the following format:
