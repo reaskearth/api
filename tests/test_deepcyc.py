@@ -123,3 +123,37 @@ class TestDeepCycApi():
 
         ret = self.dc.pointaep(lats, lons, windspeeds=[166])
         assert ret['features'][0]['properties']['aeps'] == [0.0098]
+
+    @pytest.mark.parametrize("lat,lon,radius_km", [
+        (27.7221, -82.7386, 50)
+        ,(27.7221, -82.7386, 5)
+    ])
+    def test_circle_gateep(self, lat, lon, radius_km):
+
+        res = self.dc.gate('circle', 27.7221, -82.7386, radius_km=50)
+        assert res is not None
+
+        res2 = self.dc.gate('circle', 27.7221, -82.7386, radius_km=5)
+        assert res2 is not None
+
+    @pytest.mark.parametrize("lats,lons", [
+        ([28.556358, 28.556358], [-92.770067, -87.070986])
+    ])
+    def test_line_gateep(self, lats, lons):
+        res = self.dc.gate('line', lats, lons)
+        assert res is not None
+
+
+    @pytest.mark.parametrize("lats,lons", [
+        ([29, 30, 30], [-90, -90, -91])
+    ])
+    def test_multiline_gate(self, lats, lons):
+        res = self.dc.gate('line', lats, lons)
+        assert res is not None
+
+    @pytest.mark.parametrize("lats,lons", [
+        ([29, 30, 30, 29, 29], [-91, -91, -90, -90, -91])
+    ])
+    def test_rect_gate(self, lats, lons):
+        res = self.dc.gate('polygon', lats, lons)
+        assert res is not None
