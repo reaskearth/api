@@ -36,7 +36,6 @@ jobs:
         USERNAME: ${{ secrets.REASK_API_USERNAME }}
         PASSWORD: ${{ secrets.REASK_API_PASSWORD }}
       run: |
-        mkdir -p ~/.reask
         echo "[default]" > ~/.reask
         echo "username = ${USERNAME}" >> ~/.reask
         echo "password = ${PASSWORD}" >> ~/.reask
