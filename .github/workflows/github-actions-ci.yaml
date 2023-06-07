@@ -10,10 +10,8 @@ jobs:
     runs-on: ${{ matrix.os}}
     strategy:
       matrix:
-        #python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
-        #os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.7"]
-        os: [windows-latest]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -28,7 +26,6 @@ jobs:
         echo "username = $Env:USERNAME" >> $HOME\.reask
         echo "password = $Env:PASSWORD" >> $HOME\.reask
         chmod 600 $HOME\.reask
-        cat $HOME\.reask
     
     - name: Set up credentials (Linux and MacOS)
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'

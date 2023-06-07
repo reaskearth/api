@@ -17,14 +17,10 @@ def get_access_token():
     home_dir = os.path.expanduser('~')
     config_file = Path(home_dir) / '.reask'
 
-    print(config_file)
-
     assert os.path.isfile(config_file) == True
 
     config = configparser.ConfigParser()
     config.read(config_file)
-
-    print(f"USERNAME: {config['default']['username']}")
 
     args = {'username': config['default']['username'],
             'password': config['default']['password']}
