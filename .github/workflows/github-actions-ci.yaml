@@ -25,7 +25,7 @@ jobs:
         echo "[default]" > $HOME/.reask
         echo "username = $USERNAME" >> $HOME/.reask
         echo "password = $PASSWORD" >> $HOME/.reask
-        #chmod 600 $HOME/.reask
+        chmod 600 $HOME/.reask
 
     steps:
     - name: Git checkout 
