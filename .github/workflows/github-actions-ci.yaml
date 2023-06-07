@@ -27,6 +27,7 @@ jobs:
         echo "username = $USERNAME" >> $HOME\.reask
         echo "password = $PASSWORD" >> $HOME\.reask
         chmod 600 $HOME\.reask
+        cat $HOME\.reask
 
     - name: Git checkout 
       uses: actions/checkout@v3
