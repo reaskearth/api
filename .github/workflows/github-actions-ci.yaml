@@ -22,11 +22,11 @@ jobs:
         USERNAME: ${{ secrets.REASK_API_USERNAME }}
         PASSWORD: ${{ secrets.REASK_API_PASSWORD }}
       run: |
-        echo $HOME
-        echo "[default]" > $HOME/.reask
-        echo "username = $USERNAME" >> $HOME/.reask
-        echo "password = $PASSWORD" >> $HOME/.reask
-        chmod 600 $HOME/.reask
+        echo $HOME\.reask
+        echo "[default]" > $HOME\.reask
+        echo "username = $USERNAME" >> $HOME\.reask
+        echo "password = $PASSWORD" >> $HOME\.reask
+        chmod 600 $HOME\.reask
 
     - name: Git checkout 
       uses: actions/checkout@v3
