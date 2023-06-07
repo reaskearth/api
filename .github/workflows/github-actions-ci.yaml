@@ -10,8 +10,10 @@ jobs:
     runs-on: ${{ matrix.os}}
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        #python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        #os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.7"]
+        os: [windows-latest]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -28,27 +30,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Set up credentials (Linux and MacOS)
-      if: ${{ matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest' }}
+    - name: Set up credentials
       env:
         USERNAME: ${{ secrets.REASK_API_USERNAME }}
         PASSWORD: ${{ secrets.REASK_API_PASSWORD }}
       run: |
-        echo "[default]" > ~/.reask
-        echo "username = ${USERNAME}" >> ~/.reask
-        echo "password = ${PASSWORD}" >> ~/.reask
+        echo $HOME
+        echo "[default]" > $HOME/.reask
+        echo "username = ${USERNAME}" >> $HOME/.reask
+        echo "password = ${PASSWORD}" >> $HOME/.reask
         chmod 600 ~/.reask
-    
-    - name: Set up credentials (Windows)
-      if: ${{ matrix.os == 'windows-latest' }}
-      env:
-        USERNAME: ${{ secrets.REASK_API_USERNAME }}
-        PASSWORD: ${{ secrets.REASK_API_PASSWORD }}
-      run: |
-        echo "[default]" > %USERPROFILE%\.reask
-        echo username=%USERNAME% >> %USERPROFILE%\.reask
-        echo password=%PASSWORD% >> %USERPROFILE%\.reask
-    
+        
     - name: Run pytests
       run: |
         cd tests
