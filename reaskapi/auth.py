@@ -20,6 +20,8 @@ def get_access_token():
     config = configparser.ConfigParser()
     config.read(config_file)
 
+    print(f"USERNAME: {config['default']['username']}")
+
     args = {'username': config['default']['username'],
             'password': config['default']['password']}
 
