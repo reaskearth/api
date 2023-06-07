@@ -17,7 +17,8 @@ jobs:
 
     steps:
     # Steps represent a sequence of tasks that will be executed as part of the job
-    - name: Set up credentials
+    - name: Set up credentials (Windows)
+      if: matrix.os == 'windows-latest'
       env:
         USERNAME: ${{ secrets.REASK_API_USERNAME }}
         PASSWORD: ${{ secrets.REASK_API_PASSWORD }}
@@ -28,6 +29,17 @@ jobs:
         echo "password = $Env:PASSWORD" >> $HOME\.reask
         chmod 600 $HOME\.reask
         cat $HOME\.reask
+    
+    - name: Set up credentials (Linux and MacOS)
+      if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      env:
+        USERNAME: ${{ secrets.REASK_API_USERNAME }}
+        PASSWORD: ${{ secrets.REASK_API_PASSWORD }}
+      run: |
+        echo "[default]" > ~/.reask
+        echo "username = ${USERNAME}" >> ~/.reask
+        echo "password = ${PASSWORD}" >> ~/.reask
+        chmod 600 ~/.reask
 
     - name: Git checkout 
       uses: actions/checkout@v3
