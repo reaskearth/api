@@ -24,8 +24,8 @@ jobs:
       run: |
         echo $HOME\.reask
         echo "[default]" > $HOME\.reask
-        echo "username = $USERNAME" >> $HOME\.reask
-        echo "password = $PASSWORD" >> $HOME\.reask
+        echo "username = $Env:USERNAME" >> $HOME\.reask
+        echo "password = $Env:PASSWORD" >> $HOME\.reask
         chmod 600 $HOME\.reask
         cat $HOME\.reask
 
