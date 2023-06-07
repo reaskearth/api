@@ -19,6 +19,8 @@ def get_access_token():
 
     print(config_file)
 
+    assert os.path.isfile(config_file) == True
+
     config = configparser.ConfigParser()
     config.read(config_file)
 
