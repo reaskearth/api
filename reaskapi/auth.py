@@ -17,6 +17,8 @@ def get_access_token():
     home_dir = os.path.expanduser('~')
     config_file = Path(home_dir) / '.reask'
 
+    assert os.path.isfile(config_file) == True
+
     config = configparser.ConfigParser()
     config.read(config_file)
 
