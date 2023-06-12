@@ -420,6 +420,54 @@ res = requests.get(url, params=params)
 assert res.status_code == 200, 'API GET request failed'
 ```
 
+Results:
+```javascript
+{
+    "header": {
+        "epoch": "Present_Day",
+        "product": "DeepCyc-2.0.6",
+        "simulation_years": 41000,
+        "terrain_correction": "OW",
+        "units": "km/h",
+        "wind_averaing_period": "1-minute"
+    },
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "geometry": {
+                "coordinates": [
+                    [
+                        ...
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "properties": {
+                "event_id": [
+                    "d035b43ffbc1a7a47812",
+                    ...
+                    "f876b79b3ef8330c6222"
+                ],
+                "location": [
+                    ...
+                ],
+                "windspeed": [
+                    359,
+                    ...
+                    2
+                ],
+                "year_id": [
+                    "2016_0899_RAN",
+                    ...
+                    "2005_0310_RAN"
+                ]
+            },
+            "type": "Feature"
+        }
+    ]
+}
+```
+
 ## Metryc Endpoint Usage
 
 The Metryc API supports **point** and **gate** endpoints.
