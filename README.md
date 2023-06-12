@@ -290,7 +290,9 @@ The example code includes a request for the AEPs at given windspeeds.
 
 ### Gate
 
-`v1/deepcyc/gate` returns TC maximum surface windspeeds for all events crossing or within a gate during a given epoch. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction / open water. For example:
+`v1/deepcyc/gate` returns TC maximum surface windspeeds for all events crossing or within a gate during a given epoch. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction / open water.
+
+For example:
 
 ```Python
 url = 'https://api.reask.earth/v1/deepcyc/gate'
@@ -298,7 +300,7 @@ params = {
     'access_token': auth_res['access_token'], # access token from auth step
     'peril': 'TC_Wind',
     'epoch': 'Present_Day',
-    'gate': 'circle'
+    'gate': 'circle',
     'lats': [30],
     'lons': [-90.0],
     'radius_km': 50,
@@ -306,6 +308,67 @@ params = {
 
 res = requests.get(url, params=params)
 assert res.status_code == 200, 'API GET request failed'
+```
+
+Returns:
+
+```javascript
+{
+    "features": [
+        {
+            "geometry": {
+                "coordinates": [
+                
+                ],
+                "type": "Polygon"
+            },
+            "properties": {
+                "event_id": [
+                    "d035b43ffbc1a7a47812",
+                    
+                    "f876b79b3ef8330c6222"
+                ],
+                "location": [
+                    {
+                        "coordinates": [
+                            -89.840792,
+                            30.492749
+                        ],
+                        "type": "Point"
+                    },
+                    ...
+                    {
+                        "coordinates": [
+                            -89.985364,
+                            29.482514
+                        ],
+                        "type": "Point"
+                    }
+                ],
+                "windspeed": [
+                    359,
+                    ...
+                    2
+                ],
+                "year_id": [
+                    "2016_0899_RAN",
+                    ...
+                    "2005_0310_RAN"
+                ]
+            },
+            "type": "Feature"
+        }
+    ],
+    "header": {
+        "epoch": "Present_Day",
+        "product": "DeepCyc-2.0.6",
+        "simulation_years": 41000,
+        "terrain_correction": "OW",
+        "units": "km/h",
+        "wind_averaing_period": "1-minute"
+    },
+    "type": "FeatureCollection"
+}
 ```
 
 ### Gate AEP (Gate Annual Exceedance Probability)
