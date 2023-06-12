@@ -31,3 +31,6 @@ def get_access_token():
 
     return auth_res['access_token']
 
+if __name__ == '__main__':
+    print(get_access_token())
+
