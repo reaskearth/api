@@ -292,7 +292,7 @@ The example code includes a request for the AEPs at given windspeeds.
 
 `v1/deepcyc/gate` returns TC maximum surface windspeeds for all events crossing or within a gate during a given epoch. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction / open water.
 
-For example:
+The following example will search using a circle with 50km radius:
 
 ```Python
 url = 'https://api.reask.earth/v1/deepcyc/gate'
@@ -371,6 +371,34 @@ Returns:
 }
 ```
 
+For lines and polygons the parameters must include latitudes and longitudes of the vertices:
+
+Example for a line:
+```python
+params = {
+    'access_token': auth_res['access_token'], # access token from auth step
+    'peril': 'TC_Wind',
+    'epoch': 'Present_Day',
+    'gate': 'line',
+    'lats': [29, 30],
+    'lons': [-91, -90],
+}
+```
+
+For polygons the start and end coordinates should have the same latitude and longitude:
+
+```python
+params = {
+    'access_token': auth_res['access_token'], # access token from auth step
+    'peril': 'TC_Wind',
+    'epoch': 'Present_Day',
+    'gate': 'line',
+    'lats': [29, 30, 30, 29, 29],
+    'lons': [-91, -91, -90, -90, -91],
+}
+```
+
+
 ### Gate AEP (Gate Annual Exceedance Probability)
 
 `v1/deepcyc/gateaep` returns TC maximum surface windspeeds crossing/entering a gate at a specified annual exceedance probability. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
@@ -381,7 +409,7 @@ params = {
     'access_token': auth_res['access_token'], # access token from auth step
     'peril': 'TC_Wind',
     'epoch': 'Present_Day',
-    'gate': 'circle'
+    'gate': 'circle',
     'lats': [30],
     'lons': [-90.0],
     'radius_km': 50,
