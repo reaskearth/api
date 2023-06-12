@@ -63,13 +63,19 @@ jobs:
         channel-id: ${{ env.SLACK_CHANNEL_ID }}
         payload: |
           {
-            "text": "GitHub Action build result: ${{ job.status }}\n${{ github.event.pull_request.html_url || github.event.head_commit.url }}",
+            "text": "GitHub Action build result: ${{ job.status }}",
             "blocks": [
+              { "type": "header",
+                "text": {
+                  "type": "plain_text",
+                  "text": "CI Pipeline Results"
+                }
+              },
               {
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "Integration tests for Python version ${{ matrix.python-version }} on ${{ matrix.os }}: [${{ job.status }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs/${{ github.job_id }})"
+                  "text": "Tests for Python version ${{ matrix.python-version }} on ${{ matrix.os }}: ${{ job.status }}"
                 }
               }
             ]
