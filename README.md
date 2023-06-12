@@ -156,7 +156,7 @@ assert res.status_code == 200, 'API GET request failed'
 
 Returns:
 
-```Python
+```javascript
 {
     "features": [
         {
@@ -220,7 +220,7 @@ The `properties` attribute of each feature contains the following fields:
 For example to request windspeeds at AEPs of 0.1, 0.01, 0.004:
 
 ```Python
-url = 'https://api.reask.earth/v1/deepcyc/pointep'
+url = 'https://api.reask.earth/v1/deepcyc/pointaep'
 params = {
     'access_token': auth_res['access_token'], # access token from auth step
     'peril': 'TC_Wind',
@@ -244,40 +244,44 @@ res = requests.get(url, params=params)
 
 Returns:
 
-```Python
+```javascript
 {
     "header": {
         "epoch": "Present_Day",
         "product": "DeepCyc-2.0.6",
         "simulation_years": 41000,
-        "tag": "Florida",
-        "terrain_correction": "ft_gust",
+        "tag": "Miami Beach",
+        "terrain_correction": "FT_GUST",
         "units": "kph",
         "windspeed_averaing_period": "3-seconds"
     },
-    "type": "FeatureCollection"
+    "type": "FeatureCollection",
     "features": [
-    {
-        "geometry": {
-            "coordinates": [
+        {
+            "geometry": {
+                "coordinates": [
                 ...
-            ],
-            "type": "Polygon"
-        },
-        "properties": {
-            "cell_id": 438710150,
-            "aeps": [
-                0.1,
-                0.01,
-                0.004
-            ],
-            "windspeeds": [
-                119.0,
-                200.0,
-                223.0
-            ]
-        },
-   }],
+                ],
+                "type": "Polygon"
+            },
+            "properties": {
+                "aeps": [
+                    0.1,
+                    0.01,
+                    0.004
+                ],
+                "cell_id": 437161971,
+                "latitude": 25.80665,
+                "longitude": -80.12412,
+                "windspeeds": [
+                    141,
+                    237,
+                    266
+                ]
+            },
+            "type": "Feature"
+        }
+    ]
 }
 ```
 
