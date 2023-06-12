@@ -65,17 +65,11 @@ jobs:
           {
             "text": "GitHub Action build result: ${{ job.status }}",
             "blocks": [
-              { "type": "header",
-                "text": {
-                  "type": "plain_text",
-                  "text": "CI Pipeline Results"
-                }
-              },
               {
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "Tests for Python version ${{ matrix.python-version }} on ${{ matrix.os }}: ${{ job.status }}"
+                  "text": "CI tests for Python version ${{ matrix.python-version }} on ${{ matrix.os }}: ${{ job.status }}"
                 }
               }
             ]
