@@ -28,7 +28,11 @@ username = <USERNAME_OR_EMAIL>
 password = <PASSWORD>
 ```
 
-Check the permissions of this file and make sure it is only readable by yourself.
+Check the permissions of this file and make sure it is only readable by yourself by running the following command:
+
+```
+chmod 600 ~/.reask
+```
 
 Take a look at the Python3 example code here: https://github.com/reaskearth/api/ . This can be downloaded by either clicking on the green **Code** button or using the `git` command as follows:
 
@@ -62,7 +66,7 @@ args = {'username': '<MY_USERNAME_OR_EMAIL>',
 res = requests.post(auth_url, data=args)
 
 assert res.status_code == 200, 'Login failed'
-print(json.dumps(res.json, indent=4))
+print(json.dumps(res.json(), indent=4))
 ```
 
 Will output:
