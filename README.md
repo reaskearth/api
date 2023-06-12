@@ -16,7 +16,7 @@ An up-to-date version of this README can be found here: https://github.com/reask
 
 | Branch | Status |
 |--------|--------|
-| Development | [![Build Status](https://github.com/fabioreask/api/actions/workflows/github-actions-ci.yaml/badge.svg)](https://github.com/fabioreask/api/actions/workflows/github-actions-ci.yaml) |
+| main | [![Build Status](https://github.com/reaskearth/api/actions/workflows/github-actions-ci.yaml/badge.svg)](https://github.com/reaskearth/api/actions/workflows/github-actions-ci.yaml) |
 
 ## Quickstart
 
