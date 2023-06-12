@@ -128,10 +128,10 @@ The DeepCyc API has four endpoints **point**, **pointaep**, **gate** and **gatea
 
 `v1/deepcyc/point` returns maximum TC surface windspeeds of all (synthetic) events impacting a given latitude, longitude point during the given epoch. The windspeeds can be returned with a range of different terrain corrections:
 
-- `ft_gust`: Full Terrain 3-second gust correction. Uses our ML terrain correction algorithm to calculate over-land gust depending on such things as land-use, topography, wind direction etc.
-- `ow`: Open Water. No correction is applied.
-- `nt`: No Terrain. As above, no correction is applied.
-- `ot`: Open Terrain. An flat grassland correction is applied.
+- `FT_GUST`: Full Terrain 3-second gust correction. Uses our ML terrain correction algorithm to calculate over-land gust depending on such things as land-use, topography, wind direction etc.
+- `OW`: Open Water. No correction is applied.
+- `NT`: No Terrain. As above, no correction is applied.
+- `OT`: Open Terrain. An flat grassland correction is applied.
 
 In addition either a `3-second` or `1-minute` wind averaging period can be selected. For the `ft_gust` terrain type only `3-second` wind averaging is supported.
 
@@ -143,11 +143,11 @@ params = {
     'access_token': auth_res['access_token'], # access token from auth step
     'peril': 'TC_Wind',
     'epoch': 'Present_Day',
-    'terrain_correction': 'ft_gust',
+    'terrain_correction': 'FT_GUST',
     'windspeed_averaging_period': '3-seconds',
     'units': 'mph',
-    'lats': [25.8],
-    'lons': [-79.5],
+    'lats': [26.26],
+    'lons': [-83.51],
 }
 
 res = requests.get(url, params=params)
@@ -158,46 +158,54 @@ Returns:
 
 ```Python
 {
+    "features": [
+        {
+            "geometry": {
+                "coordinates": [
+                    [
+                        ...
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "properties": {
+                "cell_id": 438894232,
+                "event_ids": [
+                    "96e41f9553fb059d2bb1",
+                    ...
+                    "7dd6a559764dd9a21455"
+                ],
+                "latitude": 26.26,
+                "longitude": -83.51,
+                "windspeeds": [
+                    250.0,
+                    ...
+                    37.0
+                ],
+                "year_ids": [
+                    "1998_0664_RAN",
+                    ...
+                    "1980_0020_RAN"
+                ]
+            },
+            "type": "Feature"
+        }
+    ],
     "header": {
         "epoch": "Present_Day",
         "product": "DeepCyc-2.0.6",
         "simulation_years": 41000,
-        "tag": "Florida",
-        "terrain_correction": "ft_gust",
-        "units": "kph",
-        "windspeed_averaing_period": "3-seconds"
+        "terrain_correction": "FT_GUST",
+        "units": "mph",
+        "wind_averaing_period": "3-seconds"
     },
     "type": "FeatureCollection"
-    "features": [
-    {
-        "geometry": {
-            "coordinates": [
-                ...
-            ],
-            "type": "Polygon"
-        },
-        "properties": {
-            "cell_id": 441622518,
-            "event_ids": [
-                "6440c87fad3b34bcde21",
-                "2450f2a23d82ce0225b5",
-                ...
-            ],
-            "windspeeds": [
-                60.0,
-                60.0,
-                ...
-            ],
-            "year_ids": [
-                "1980_0226",
-                "1980_0586",
-            ],
-       }
-   }],
 }
 ```
 
-The returned document is a valid GeoJSON document describing the geometry of the requested locations (also known as `features`). The `properties` attribute of each feature contains the following fields:
+The returned document is a valid [GeoJSON](https://en.wikipedia.org/wiki/GeoJSON) document describing the geometry of the requested locations (also known as `features`).
+
+The `properties` attribute of each feature contains the following fields:
 
 - `cell_id`: this is a globally unique identifier for the returned grid cell. There is example code showing how to map these ids to and from cells at `example_code/grid_cell_id_map.py`.
 - `event_ids`: a list of identifiers for the events that have impacted the requested location.
