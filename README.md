@@ -18,7 +18,7 @@ An up-to-date version of this README can be found here: https://github.com/reask
 |--------|--------|
 | main | [![Build Status](https://github.com/reaskearth/api/actions/workflows/github-actions-ci.yaml/badge.svg)](https://github.com/reaskearth/api/actions/workflows/github-actions-ci.yaml) |
 
-## Quickstart
+##<a name="quickstart"></a> Quickstart
 
 Put your Reask credentials into a file called `.reask` in your home directory using the following format:
 
@@ -34,13 +34,16 @@ Check the permissions of this file and make sure it is only readable by yourself
 chmod 600 ~/.reask
 ```
 
-Take a look at the Python3 example code here: https://github.com/reaskearth/api/ . This can be downloaded by either clicking on the green **Code** button or using the `git` command as follows:
+### Source code
+Take a look at the Python3 example code here: https://github.com/reaskearth/api/.
+
+This can be downloaded by either clicking on the green **Code** button or using the `git` command as follows:
 
 ```
 git clone https://github.com/reaskearth/api.git reaskapi
 ```
 
-Once downloaded it can be run with:
+Once downloaded you can test the code by running some of the examples under the `example_code` folder:
 
 ```
 cd reaskapi/example_code
@@ -86,16 +89,34 @@ The `access_token` value is then used as a `GET` request parameter as shown in t
 
 The `tools/` directory contains some command line utilities that make it easy to use the API for common tasks.
 
-*get_hazard_csv.py*: will generate a CSV containing hazard values for provided locations. It supports both DeepCyc for probabilistic risk as well as Metrcy for estimates of historical events. To use first set-up the authenitcation as described above then try the following:
+*get_hazard_csv.py*: will generate a CSV containing hazard values for provided locations in a CSV file. It supports both DeepCyc for probabilistic risk as well as Metrcy for estimates of historical events.
+
+The CSV file should include a header line with the latitude and longitude columns. The tool accepts the following column names:
+
+- latitude: `latitude`, `Latitude`, `lat`, or `Lat`
+- longitude: `longitude`, `Longitude`, `lon`, or `Lon`
+
+To use `get_hazard_csv.py` first set-up the authentication and clone the repository as described in the [Quickstart](#quickstart) section and then try the following sequence of commands from the directory where the code is located in your computer:
 
 ```Bash
-git clone https://github.com/reaskearth/api.git reaskapi
-cd reaskapi
-python3 -m venv venv
-. venv/bin/activate
-pip install -r requirements.txt
+# Change the current directory to the tools folder
 cd tools
+
+# Create a locations.csv file with the points of interest.
+# This will create a locations file with three spoints
+echo "lat,lon" > locations.csv
+echo "28.999,-81.001" >> locations.csv
+echo "27.7221,-82.7386" >> locations.csv
+echo "26.26,-83.51" >> locations.csv
+
+# Run the command line utility
 python3 get_hazard_csv.py --rp_year 20 --location_csv locations.csv  --output_filename DeepCyc_RP20y.csv --product DeepCyc
+```
+
+After a succesfull execution of `get_hazard_csv.py` utility you can check the results stored in the output file with the following command:
+
+```Bash
+cat DeepCyc_RP20y.csv
 ```
 
 
