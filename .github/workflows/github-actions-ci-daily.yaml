@@ -1,10 +1,10 @@
-name: CI - Integration Test 
+name: CI - Integration Daily 
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
 on:
   schedule:
-    - cron: '55 21 * * *'
+    - cron: '00 22 * * *'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
