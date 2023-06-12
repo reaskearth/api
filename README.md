@@ -470,7 +470,7 @@ Results:
 
 ## Metryc Endpoint Usage
 
-The Metryc API supports **point** and **gate** endpoints.
+The Metryc API supports **point** and **gate** endpoints and returning results in GeoJSON with storms names, seasons and windspeeds.
 
 ### Point
 
@@ -493,46 +493,49 @@ assert res.status_code == 200, 'API GET request failed'
 
 Returns:
 
-```Python
-    {
-        "data": [
-            {
-                "latitude": 25.80665,
-                "longitude": -80.13412,
-                "storm": "Charley_2004",
-                "windspeed_ft_3sec_kph": 99
-            },
-            {
-                "latitude": 25.80665,
-                "longitude": -80.13412,
-                "storm": "Katrina_2005",
-                "windspeed_ft_3sec_kph": 107
-            },
-            {
-                "latitude": 25.80665,
-                "longitude": -80.13412,
-                "storm": "Ian_2022",
-                "windspeed_ft_3sec_kph": 90
-            },
-            {
-                "latitude": 25.80665,
-                "longitude": -80.13412,
-                "storm": "Wilma_2005",
-                "windspeed_ft_3sec_kph": 159
-            },
-            {
-                "latitude": 25.80665,
-                "longitude": -80.13412,
-                "storm": "Andrew_1992",
-                "windspeed_ft_3sec_kph": 263
-            },
-
-            ...
-        ],
-        "product": "Metryc-2.0.1",
+```javascript
+{
+    "header": {
+        "product": "Metryc-1.0.1",
         "reporting_period": "1980 to 2021",
-        "tag": "Miami Beach"
-    }
+        "tag": "Miami Beach",
+        "terrain_correction": "FT_GUST",
+        "units": "kph",
+        "windspeed_averaing_period": "3-seconds"
+    },
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "geometry": {
+                "coordinates": [
+                    ...
+                ],
+                "type": "Polygon"
+            },
+            "properties": {
+                "cell_id": 437161971,
+                "latitude": 25.80665,
+                "longitude": -80.12412,
+                "storm_names": [
+                    "Charley",
+                    ...
+                    "Abby"
+                ],
+                "storm_seasons": [
+                    "2004",
+                    ...
+                    "1968"
+                ],
+                "windspeeds": [
+                    115.0,
+                    ...
+                    87.0
+                ]
+            },
+            "type": "Feature"
+        }
+    ]
+}
 ```
 
 Not that the above list has been shortened.
@@ -540,6 +543,86 @@ Not that the above list has been shortened.
 ### Gate
 
 `v1/metryc/gate` returns agency recorded TC surface windspeeds entering or within a gate. The values returned are 1-minute averaged and the underlying dataset used is IBTrACS (https://www.ncei.noaa.gov/products/international-best-track-archive). You can think of this endpoint as an alternative way to query the IBTrACS database and it is useful for comparing the Reask products with observed TC risk.
+
+```Python
+url = 'https://api.reask.earth/v1/metryc/gate'
+params = {
+    'access_token': auth_res['access_token'], # access token from auth step
+    'peril': 'TC_Wind',
+    'tag': 'New Orleans',
+    'lats': [30],
+    'lons': [-90],
+    'gate': 'circle',
+    'radius_km': 50
+}
+
+res = requests.get(url, params=params)
+assert res.status_code == 200, 'API GET request failed'
+```
+
+Results:
+```javascript
+{
+    "features": [
+        {
+            "geometry": {
+                "coordinates": [
+                    ...
+                ],
+                "type": "Polygon"
+            },
+            "properties": {
+                "event_id": [
+                    "2005236N23285",
+                    ...
+                    "2010203N22286"
+                ],
+                "location": [
+                    {
+                        "coordinates": [
+                            -89.6,
+                            29.670617
+                        ],
+                        "type": "Point"
+                    },
+                    ...
+                    {
+                        "coordinates": [
+                            -89.984022,
+                            29.48258
+                        ],
+                        "type": "Point"
+                    }
+                ],
+                "name": [
+                    "Katrina",
+                    ...
+                    "Bonnie"
+                ],
+                "windspeed": [
+                    201,
+                    ...
+                    41
+                ],
+                "year_id": [
+                    2005,
+                    ...
+                    2010
+                ]
+            },
+            "type": "Feature"
+        }
+    ],
+    "header": {
+        "product": "Metryc-1.0.1",
+        "tag": "New Orleans",
+        "terrain_correction": "OW",
+        "units": "km/h",
+        "windspeed_averaing_period": "1-minute"
+    },
+    "type": "FeatureCollection"
+}
+```
 
 ## Contact
 
