@@ -36,7 +36,7 @@ def get_hazard(all_lats, all_lons, rp_year, terrain_correction,
     for lats, lons in zip(np.array_split(all_lats, num_calls),
                           np.array_split(all_lons, num_calls)):
         if m.product == 'DeepCyc':
-            ret = m.pointep(lats, lons, years=rp_year,
+            ret = m.pointaep(lats, lons, years=rp_year,
                              terrain_correction=terrain_correction,
                              windspeed_averaging_period=windspeed_averaging_period)
         else:

@@ -16,9 +16,9 @@ An up-to-date version of this README can be found here: https://github.com/reask
 
 | Branch | Status |
 |--------|--------|
-| Development | [![Build Status](https://github.com/fabioreask/api/actions/workflows/github-actions-ci.yaml/badge.svg)](https://github.com/fabioreask/api/actions/workflows/github-actions-ci.yaml) |
+| main | [![Build Status](https://github.com/reaskearth/api/actions/workflows/github-actions-ci.yaml/badge.svg)](https://github.com/reaskearth/api/actions/workflows/github-actions-ci.yaml) |
 
-## Quickstart
+##<a name="quickstart"></a> Quickstart
 
 Put your Reask credentials into a file called `.reask` in your home directory using the following format:
 
@@ -28,15 +28,22 @@ username = <USERNAME_OR_EMAIL>
 password = <PASSWORD>
 ```
 
-Check the permissions of this file and make sure it is only readable by yourself.
+Check the permissions of this file and make sure it is only readable by yourself by running the following command:
 
-Take a look at the Python3 example code here: https://github.com/reaskearth/api/ . This can be downloaded by either clicking on the green **Code** button or using the `git` command as follows:
+```
+chmod 600 ~/.reask
+```
+
+### Source code
+Take a look at the Python3 example code here: https://github.com/reaskearth/api/.
+
+This can be downloaded by either clicking on the green **Code** button or using the `git` command as follows:
 
 ```
 git clone https://github.com/reaskearth/api.git reaskapi
 ```
 
-Once downloaded it can be run with:
+Once downloaded you can test the code by running some of the examples under the `example_code` folder:
 
 ```
 cd reaskapi/example_code
@@ -62,7 +69,7 @@ args = {'username': '<MY_USERNAME_OR_EMAIL>',
 res = requests.post(auth_url, data=args)
 
 assert res.status_code == 200, 'Login failed'
-print(json.dumps(res.json, indent=4))
+print(json.dumps(res.json(), indent=4))
 ```
 
 Will output:
@@ -82,16 +89,34 @@ The `access_token` value is then used as a `GET` request parameter as shown in t
 
 The `tools/` directory contains some command line utilities that make it easy to use the API for common tasks.
 
-*get_hazard_csv.py*: will generate a CSV containing hazard values for provided locations. It supports both DeepCyc for probabilistic risk as well as Metrcy for estimates of historical events. To use first set-up the authenitcation as described above then try the following:
+*get_hazard_csv.py*: will generate a CSV containing hazard values for provided locations in a CSV file. It supports both DeepCyc for probabilistic risk as well as Metrcy for estimates of historical events.
+
+The CSV file should include a header line with the latitude and longitude columns. The tool accepts the following column names:
+
+- latitude: `latitude`, `Latitude`, `lat`, or `Lat`
+- longitude: `longitude`, `Longitude`, `lon`, or `Lon`
+
+To use `get_hazard_csv.py` first set-up the authentication and clone the repository as described in the [Quickstart](#quickstart) section and then try the following sequence of commands from the directory where the code is located in your computer:
 
 ```Bash
-git clone https://github.com/reaskearth/api.git reaskapi
-cd reaskapi
-python3 -m venv venv
-. venv/bin/activate
-pip install -r requirements.txt
+# Change the current directory to the tools folder
 cd tools
+
+# Create a locations.csv file with the points of interest.
+# This will create a locations file with three spoints
+echo "lat,lon" > locations.csv
+echo "28.999,-81.001" >> locations.csv
+echo "27.7221,-82.7386" >> locations.csv
+echo "26.26,-83.51" >> locations.csv
+
+# Run the command line utility
 python3 get_hazard_csv.py --rp_year 20 --location_csv locations.csv  --output_filename DeepCyc_RP20y.csv --product DeepCyc
+```
+
+After a succesfull execution of `get_hazard_csv.py` utility you can check the results stored in the output file with the following command:
+
+```Bash
+cat DeepCyc_RP20y.csv
 ```
 
 
@@ -103,10 +128,10 @@ The DeepCyc API has four endpoints **point**, **pointaep**, **gate** and **gatea
 
 `v1/deepcyc/point` returns maximum TC surface windspeeds of all (synthetic) events impacting a given latitude, longitude point during the given epoch. The windspeeds can be returned with a range of different terrain corrections:
 
-- `ft_gust`: Full Terrain 3-second gust correction. Uses our ML terrain correction algorithm to calculate over-land gust depending on such things as land-use, topography, wind direction etc.
-- `ow`: Open Water. No correction is applied.
-- `nt`: No Terrain. As above, no correction is applied.
-- `ot`: Open Terrain. An flat grassland correction is applied.
+- `FT_GUST`: Full Terrain 3-second gust correction. Uses our ML terrain correction algorithm to calculate over-land gust depending on such things as land-use, topography, wind direction etc.
+- `OW`: Open Water. No correction is applied.
+- `NT`: No Terrain. As above, no correction is applied.
+- `OT`: Open Terrain. An flat grassland correction is applied.
 
 In addition either a `3-second` or `1-minute` wind averaging period can be selected. For the `ft_gust` terrain type only `3-second` wind averaging is supported.
 
@@ -118,11 +143,11 @@ params = {
     'access_token': auth_res['access_token'], # access token from auth step
     'peril': 'TC_Wind',
     'epoch': 'Present_Day',
-    'terrain_correction': 'ft_gust',
+    'terrain_correction': 'FT_GUST',
     'windspeed_averaging_period': '3-seconds',
     'units': 'mph',
-    'lats': [25.8],
-    'lons': [-79.5],
+    'lats': [26.26],
+    'lons': [-83.51],
 }
 
 res = requests.get(url, params=params)
@@ -131,48 +156,56 @@ assert res.status_code == 200, 'API GET request failed'
 
 Returns:
 
-```Python
+```javascript
 {
+    "features": [
+        {
+            "geometry": {
+                "coordinates": [
+                    [
+                        ...
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "properties": {
+                "cell_id": 438894232,
+                "event_ids": [
+                    "96e41f9553fb059d2bb1",
+                    ...
+                    "7dd6a559764dd9a21455"
+                ],
+                "latitude": 26.26,
+                "longitude": -83.51,
+                "windspeeds": [
+                    250.0,
+                    ...
+                    37.0
+                ],
+                "year_ids": [
+                    "1998_0664_RAN",
+                    ...
+                    "1980_0020_RAN"
+                ]
+            },
+            "type": "Feature"
+        }
+    ],
     "header": {
         "epoch": "Present_Day",
         "product": "DeepCyc-2.0.6",
         "simulation_years": 41000,
-        "tag": "Florida",
-        "terrain_correction": "ft_gust",
-        "units": "kph",
-        "windspeed_averaing_period": "3-seconds"
+        "terrain_correction": "FT_GUST",
+        "units": "mph",
+        "wind_averaing_period": "3-seconds"
     },
     "type": "FeatureCollection"
-    "features": [
-    {
-        "geometry": {
-            "coordinates": [
-                ...
-            ],
-            "type": "Polygon"
-        },
-        "properties": {
-            "cell_id": 441622518,
-            "event_ids": [
-                "6440c87fad3b34bcde21",
-                "2450f2a23d82ce0225b5",
-                ...
-            ],
-            "windspeeds": [
-                60.0,
-                60.0,
-                ...
-            ],
-            "year_ids": [
-                "1980_0226",
-                "1980_0586",
-            ],
-       }
-   }],
 }
 ```
 
-The returned document is a valid GeoJSON document describing the geometry of the requested locations (also known as `features`). The `properties` attribute of each feature contains the following fields:
+The returned document is a valid [GeoJSON](https://en.wikipedia.org/wiki/GeoJSON) document describing the geometry of the requested locations (also known as `features`).
+
+The `properties` attribute of each feature contains the following fields:
 
 - `cell_id`: this is a globally unique identifier for the returned grid cell. There is example code showing how to map these ids to and from cells at `example_code/grid_cell_id_map.py`.
 - `event_ids`: a list of identifiers for the events that have impacted the requested location.
@@ -187,7 +220,7 @@ The returned document is a valid GeoJSON document describing the geometry of the
 For example to request windspeeds at AEPs of 0.1, 0.01, 0.004:
 
 ```Python
-url = 'https://api.reask.earth/v1/deepcyc/pointep'
+url = 'https://api.reask.earth/v1/deepcyc/pointaep'
 params = {
     'access_token': auth_res['access_token'], # access token from auth step
     'peril': 'TC_Wind',
@@ -211,40 +244,44 @@ res = requests.get(url, params=params)
 
 Returns:
 
-```Python
+```javascript
 {
     "header": {
         "epoch": "Present_Day",
         "product": "DeepCyc-2.0.6",
         "simulation_years": 41000,
-        "tag": "Florida",
-        "terrain_correction": "ft_gust",
+        "tag": "Miami Beach",
+        "terrain_correction": "FT_GUST",
         "units": "kph",
         "windspeed_averaing_period": "3-seconds"
     },
-    "type": "FeatureCollection"
+    "type": "FeatureCollection",
     "features": [
-    {
-        "geometry": {
-            "coordinates": [
+        {
+            "geometry": {
+                "coordinates": [
                 ...
-            ],
-            "type": "Polygon"
-        },
-        "properties": {
-            "cell_id": 438710150,
-            "aeps": [
-                0.1,
-                0.01,
-                0.004
-            ],
-            "windspeeds": [
-                119.0,
-                200.0,
-                223.0
-            ]
-        },
-   }],
+                ],
+                "type": "Polygon"
+            },
+            "properties": {
+                "aeps": [
+                    0.1,
+                    0.01,
+                    0.004
+                ],
+                "cell_id": 437161971,
+                "latitude": 25.80665,
+                "longitude": -80.12412,
+                "windspeeds": [
+                    141,
+                    237,
+                    266
+                ]
+            },
+            "type": "Feature"
+        }
+    ]
 }
 ```
 
@@ -253,7 +290,9 @@ The example code includes a request for the AEPs at given windspeeds.
 
 ### Gate
 
-`v1/deepcyc/gate` returns TC maximum surface windspeeds for all events crossing or within a gate during a given epoch. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction / open water. For example:
+`v1/deepcyc/gate` returns TC maximum surface windspeeds for all events crossing or within a gate during a given epoch. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction / open water.
+
+The following example will search using a circle with 50km radius:
 
 ```Python
 url = 'https://api.reask.earth/v1/deepcyc/gate'
@@ -261,7 +300,7 @@ params = {
     'access_token': auth_res['access_token'], # access token from auth step
     'peril': 'TC_Wind',
     'epoch': 'Present_Day',
-    'gate': 'circle'
+    'gate': 'circle',
     'lats': [30],
     'lons': [-90.0],
     'radius_km': 50,
@@ -270,6 +309,95 @@ params = {
 res = requests.get(url, params=params)
 assert res.status_code == 200, 'API GET request failed'
 ```
+
+Returns:
+
+```javascript
+{
+    "features": [
+        {
+            "geometry": {
+                "coordinates": [
+                
+                ],
+                "type": "Polygon"
+            },
+            "properties": {
+                "event_id": [
+                    "d035b43ffbc1a7a47812",
+                    
+                    "f876b79b3ef8330c6222"
+                ],
+                "location": [
+                    {
+                        "coordinates": [
+                            -89.840792,
+                            30.492749
+                        ],
+                        "type": "Point"
+                    },
+                    ...
+                    {
+                        "coordinates": [
+                            -89.985364,
+                            29.482514
+                        ],
+                        "type": "Point"
+                    }
+                ],
+                "windspeed": [
+                    359,
+                    ...
+                    2
+                ],
+                "year_id": [
+                    "2016_0899_RAN",
+                    ...
+                    "2005_0310_RAN"
+                ]
+            },
+            "type": "Feature"
+        }
+    ],
+    "header": {
+        "epoch": "Present_Day",
+        "product": "DeepCyc-2.0.6",
+        "simulation_years": 41000,
+        "terrain_correction": "OW",
+        "units": "km/h",
+        "wind_averaing_period": "1-minute"
+    },
+    "type": "FeatureCollection"
+}
+```
+
+For lines and polygons the parameters must include latitudes and longitudes of the vertices:
+
+Example for a line:
+```python
+params = {
+    'access_token': auth_res['access_token'], # access token from auth step
+    'peril': 'TC_Wind',
+    'epoch': 'Present_Day',
+    'gate': 'line',
+    'lats': [29, 30],
+    'lons': [-91, -90],
+}
+```
+
+For polygons the start and end coordinates should have the same latitude and longitude:
+
+```python
+params = {
+    'access_token': auth_res['access_token'], # access token from auth step
+    'peril': 'TC_Wind',
+    'epoch': 'Present_Day',
+    'gate': 'line',
+    'lats': [29, 30, 30, 29, 29],
+    'lons': [-91, -91, -90, -90, -91],
+}
+```
+
 
 ### Gate AEP (Gate Annual Exceedance Probability)
 
@@ -281,7 +409,7 @@ params = {
     'access_token': auth_res['access_token'], # access token from auth step
     'peril': 'TC_Wind',
     'epoch': 'Present_Day',
-    'gate': 'circle'
+    'gate': 'circle',
     'lats': [30],
     'lons': [-90.0],
     'radius_km': 50,
@@ -292,9 +420,57 @@ res = requests.get(url, params=params)
 assert res.status_code == 200, 'API GET request failed'
 ```
 
+Results:
+```javascript
+{
+    "header": {
+        "epoch": "Present_Day",
+        "product": "DeepCyc-2.0.6",
+        "simulation_years": 41000,
+        "terrain_correction": "OW",
+        "units": "km/h",
+        "wind_averaing_period": "1-minute"
+    },
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "geometry": {
+                "coordinates": [
+                    [
+                        ...
+                    ]
+                ],
+                "type": "Polygon"
+            },
+            "properties": {
+                "event_id": [
+                    "d035b43ffbc1a7a47812",
+                    ...
+                    "f876b79b3ef8330c6222"
+                ],
+                "location": [
+                    ...
+                ],
+                "windspeed": [
+                    359,
+                    ...
+                    2
+                ],
+                "year_id": [
+                    "2016_0899_RAN",
+                    ...
+                    "2005_0310_RAN"
+                ]
+            },
+            "type": "Feature"
+        }
+    ]
+}
+```
+
 ## Metryc Endpoint Usage
 
-The Metryc API supports **point** and **gate** endpoints.
+The Metryc API supports **point** and **gate** endpoints and returning results in GeoJSON with storms names, seasons and windspeeds.
 
 ### Point
 
@@ -317,46 +493,49 @@ assert res.status_code == 200, 'API GET request failed'
 
 Returns:
 
-```Python
-    {
-        "data": [
-            {
-                "latitude": 25.80665,
-                "longitude": -80.13412,
-                "storm": "Charley_2004",
-                "windspeed_ft_3sec_kph": 99
-            },
-            {
-                "latitude": 25.80665,
-                "longitude": -80.13412,
-                "storm": "Katrina_2005",
-                "windspeed_ft_3sec_kph": 107
-            },
-            {
-                "latitude": 25.80665,
-                "longitude": -80.13412,
-                "storm": "Ian_2022",
-                "windspeed_ft_3sec_kph": 90
-            },
-            {
-                "latitude": 25.80665,
-                "longitude": -80.13412,
-                "storm": "Wilma_2005",
-                "windspeed_ft_3sec_kph": 159
-            },
-            {
-                "latitude": 25.80665,
-                "longitude": -80.13412,
-                "storm": "Andrew_1992",
-                "windspeed_ft_3sec_kph": 263
-            },
-
-            ...
-        ],
-        "product": "Metryc-2.0.1",
+```javascript
+{
+    "header": {
+        "product": "Metryc-1.0.1",
         "reporting_period": "1980 to 2021",
-        "tag": "Miami Beach"
-    }
+        "tag": "Miami Beach",
+        "terrain_correction": "FT_GUST",
+        "units": "kph",
+        "windspeed_averaing_period": "3-seconds"
+    },
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "geometry": {
+                "coordinates": [
+                    ...
+                ],
+                "type": "Polygon"
+            },
+            "properties": {
+                "cell_id": 437161971,
+                "latitude": 25.80665,
+                "longitude": -80.12412,
+                "storm_names": [
+                    "Charley",
+                    ...
+                    "Abby"
+                ],
+                "storm_seasons": [
+                    "2004",
+                    ...
+                    "1968"
+                ],
+                "windspeeds": [
+                    115.0,
+                    ...
+                    87.0
+                ]
+            },
+            "type": "Feature"
+        }
+    ]
+}
 ```
 
 Not that the above list has been shortened.
@@ -364,6 +543,86 @@ Not that the above list has been shortened.
 ### Gate
 
 `v1/metryc/gate` returns agency recorded TC surface windspeeds entering or within a gate. The values returned are 1-minute averaged and the underlying dataset used is IBTrACS (https://www.ncei.noaa.gov/products/international-best-track-archive). You can think of this endpoint as an alternative way to query the IBTrACS database and it is useful for comparing the Reask products with observed TC risk.
+
+```Python
+url = 'https://api.reask.earth/v1/metryc/gate'
+params = {
+    'access_token': auth_res['access_token'], # access token from auth step
+    'peril': 'TC_Wind',
+    'tag': 'New Orleans',
+    'lats': [30],
+    'lons': [-90],
+    'gate': 'circle',
+    'radius_km': 50
+}
+
+res = requests.get(url, params=params)
+assert res.status_code == 200, 'API GET request failed'
+```
+
+Results:
+```javascript
+{
+    "features": [
+        {
+            "geometry": {
+                "coordinates": [
+                    ...
+                ],
+                "type": "Polygon"
+            },
+            "properties": {
+                "event_id": [
+                    "2005236N23285",
+                    ...
+                    "2010203N22286"
+                ],
+                "location": [
+                    {
+                        "coordinates": [
+                            -89.6,
+                            29.670617
+                        ],
+                        "type": "Point"
+                    },
+                    ...
+                    {
+                        "coordinates": [
+                            -89.984022,
+                            29.48258
+                        ],
+                        "type": "Point"
+                    }
+                ],
+                "name": [
+                    "Katrina",
+                    ...
+                    "Bonnie"
+                ],
+                "windspeed": [
+                    201,
+                    ...
+                    41
+                ],
+                "year_id": [
+                    2005,
+                    ...
+                    2010
+                ]
+            },
+            "type": "Feature"
+        }
+    ],
+    "header": {
+        "product": "Metryc-1.0.1",
+        "tag": "New Orleans",
+        "terrain_correction": "OW",
+        "units": "km/h",
+        "windspeed_averaing_period": "1-minute"
+    },
+    "type": "FeatureCollection"
+}
+```
 
 ## Contact
 
