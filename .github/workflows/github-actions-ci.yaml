@@ -61,3 +61,25 @@ jobs:
       run: |
         cd tests
         pytest -vs
+    
+    - name: Post notification to slack channel
+      id: slack
+      uses: slackapi/slack-github-action@v1.24.0
+      with:
+        channel-id: ${{ env.SLACK_CHANNEL_ID }}
+        payload: |
+          {
+            "text": "GitHub Action build result: ${{ job.status }}",
+            "blocks": [
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "CI tests for Python version ${{ matrix.python-version }} on ${{ matrix.os }}: ${{ job.status }}"
+                }
+              }
+            ]
+          }
+      env:
+        SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        SLACK_CHANNEL_ID: ${{ secrets.SLACK_CHANNEL_ID }}
