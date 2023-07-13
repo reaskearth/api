@@ -81,8 +81,8 @@ def main():
 
     assert f3[0]['properties']['aeps'] == aeps
 
-    with open('DeepCyc_PointAEP_API_Sample.json', 'w') as f:
-        print(json.dumps(r3, indent=4), file=f)
+    with open('DeepCyc_PointEP_API_Sample.json', 'w') as f:
+        print(json.dumps(r2, indent=4), file=f)
 
 
 if __name__ == '__main__':

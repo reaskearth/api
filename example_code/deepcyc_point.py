@@ -72,6 +72,9 @@ def main():
 
     assert (np.array(ow_gust_ws) > np.array(ow_ws)).all()
 
+    with open('Florida_DeepCyc_Present_Day_API_Sample.json', 'w') as f:
+        print(json.dumps(ow, indent=4), file=f)
+
 
 if __name__ == '__main__':
     sys.exit(main())

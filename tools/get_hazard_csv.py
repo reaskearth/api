@@ -6,6 +6,7 @@ import numpy as np
 from math import ceil
 from shapely import Polygon
 from pathlib import Path
+import geopandas as gpd
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from reaskapi.deepcyc import DeepCyc
@@ -15,8 +16,8 @@ LAT_NAMES = ['latitude', 'Latitude', 'lat', 'Lat']
 LON_NAMES = ['longitude', 'Longitude', 'lon', 'Lon']
 
 
-def get_hazard(all_lats, all_lons, rp_year, terrain_correction,
-               windspeed_averaging_period, product='deepcyc'):
+def get_hazard(all_lats, all_lons, terrain_correction,
+               windspeed_averaging_period, product='deepcyc', return_period=None):
 
     if product.lower() == 'deepcyc':
         m = DeepCyc()
@@ -24,23 +25,24 @@ def get_hazard(all_lats, all_lons, rp_year, terrain_correction,
         assert product.lower() == 'metryc'
         m = Metryc()
 
-    num_calls = ceil(len(all_lats) / 1000)
     data = {'latitude': [], 'longitude': [],
             'windspeed': [], 'cell_id': []}
-    if m.product == 'DeepCyc':
+    if m.product == 'DeepCyc' and return_period is not None:
         data['return_period'] = []
     else:
         data['storm_name'] = []
         data['storm_season'] = []
 
+    num_calls = ceil(len(all_lats) / 1000)
+
     for lats, lons in zip(np.array_split(all_lats, num_calls),
                           np.array_split(all_lons, num_calls)):
-        if m.product == 'DeepCyc':
-            ret = m.pointep(lats, lons, years=rp_year,
+        if m.product == 'DeepCyc' and return_period is not None:
+            ret = m.pointep(lats, lons, years=return_period,
                              terrain_correction=terrain_correction,
                              windspeed_averaging_period=windspeed_averaging_period)
         else:
-            ret = m.point(lats, lons, 
+            ret = m.point(lats, lons,
                           terrain_correction=terrain_correction,
                           windspeed_averaging_period=windspeed_averaging_period)
 
@@ -52,8 +54,11 @@ def get_hazard(all_lats, all_lons, rp_year, terrain_correction,
                 data['windspeed'].append(ws)
                 data['cell_id'].append(props['cell_id'])
 
-                if m.product == 'DeepCyc':
-                    data['return_period'].append(rp_year)
+                if m.product == 'DeepCyc' and return_period is not None:
+                    data['return_period'].append(return_period)
+                elif m.product == 'DeepCyc':
+                    data['storm_name'].append(props['event_ids'][i])
+                    data['storm_season'].append(props['year_ids'][i])
                 else:
                     data['storm_name'].append(props['storm_names'][i])
                     data['storm_season'].append(props['storm_seasons'][i])
@@ -118,9 +123,9 @@ def main():
         lons = list(input_df[lon_col_name])
 
     df = get_hazard(lats, lons,
-                    args.rp_year, args.terrain_correction,
+                    args.terrain_correction,
                     args.windspeed_averaging_period,
-                    product=args.product)
+                    product=args.product, return_period=args.rp_year)
 
     df.to_csv(args.output_filename)
 
