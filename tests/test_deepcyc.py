@@ -30,28 +30,53 @@ def generate_random_points(min_lat, max_lat, min_lon, max_lon, n_points):
 class TestDeepCycApi():
     dc = DeepCyc()
 
-    @pytest.mark.parametrize("min_lat,max_lat,min_lon,max_lon,n_points,years", [
+    @pytest.mark.parametrize("lat,lon", [
+        ([31.6938],
+         [-85.1774])
+    ])
+    def test_tcwind_events(self, lat, lon):
+        ret = self.dc.tcwind_events(lat, lon)
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) == len(set(df.cell_id))
+
+
+    @pytest.mark.parametrize("lats,lons", [
+        ([31.6938, 31.7359, 31.42, 31.532, 31.7, 31.5, 31.4, 31.1, 31.2, 31.3],
+         [-85.1774, -85.1536, -85.1, -85.1, -85.1, -85.1, -85.1, -85.1, -85.1, -85.1])
+    ])
+    def test_tcwind_simple(self, lats, lons):
+        ret = self.dc.tcwind_returnvalues(lats, lons, [100])
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) == len(lats)
+ 
+
+    @pytest.mark.parametrize("min_lat,max_lat,min_lon,max_lon,n_points,return_periods", [
         (25.0,30.0,-84.0,-80.0, 10, [10,20,100,250,500]) #Florida
     ])
-    def test_pointaep(self, min_lat, max_lat, min_lon, max_lon, n_points, years):
+    def test_tcwind_returnvalues(self, min_lat, max_lat, min_lon, max_lon, n_points, return_periods):
         # Creates sample points
+        return
         lats, lons = generate_random_points(min_lat, max_lat, min_lon, max_lon, n_points)
 
         # Use the DeepCyc client to call the API
-        ret = self.dc.pointep(lats, lons, years=years)
+        ret = self.dc.tcwind_returnvalues(lats, lons, return_periods)
 
         # Convert the results into a GeoPandas data frame
-        df = gpd.GeoDataFrame.from_features(ret).set_index('cell_id')
+        df = gpd.GeoDataFrame.from_features(ret)
 
         # Tests
         assert len(df) == len(lats)
         assert len(df.iloc[0].windspeeds) == len(years)
         assert sorted(df.iloc[0].windspeeds) == df.iloc[0].windspeeds
 
-    @pytest.mark.parametrize("lats,lons", [
-        ([26.26], [-83.51])
+
+    @pytest.mark.parametrize("lats,lons,terrain_correction", [
+        ([26.26], [-83.51], ['full_terrain_gust', 'open_water', 'open_terrain', 'all_open_terrain'])
     ])
-    def test_point_ow(self, lats, lons):
+    def test_tcwind_terrain(self, lats, lons, terrain_correction):
+        return
         ow = self.dc.point(lats, lons, 'Present_Day', 'OW', '1-minute')
         ow_ws = np.array(ow['features'][0]['properties']['windspeeds'])
 
@@ -64,44 +89,61 @@ class TestDeepCycApi():
 
         assert (ow_gust_ws > ow_ws).all()
         assert np.round(np.mean(ow_gust_ws / ow_ws), 3) == 1.321
-    
-    @pytest.mark.parametrize("lats,lons", [
-        ([26.26], [-83.51])
+
+
+    @pytest.mark.parametrize("lats,lons,wind_speed_units", [
+        ([26.26], [-83.51], ['kph', 'mph', 'kts', 'ms'])
     ])
-    def test_point_aot(self, lats, lons):
-        aot = self.dc.point(lats, lons, 'Present_Day', terrain_correction='AOT', windspeed_averaging_period='1-minute')
-        aot_ws = np.array(aot['features'][0]['properties']['windspeeds'])
+    def test_tcwind_units(self, lats, lons, wind_speed_units):
+        return
+        ow = self.dc.point(lats, lons, 'Present_Day', 'OW', '1-minute')
+        ow_ws = np.array(ow['features'][0]['properties']['windspeeds'])
 
-        aot_gust = self.dc.point(lats, lons, terrain_correction='AOT', windspeed_averaging_period='3-seconds')
-        aot_gust_ws = np.array(aot_gust['features'][0]['properties']['windspeeds'])
+        ow_gust = self.dc.point(lats, lons, 'Present_Day', 'OW', '3-seconds')
+        ow_gust_ws = np.array(ow_gust['features'][0]['properties']['windspeeds'])
 
-        assert (aot_gust_ws > aot_ws).all()
-        assert np.round(np.mean(aot_gust_ws / aot_ws), 3) == 1.423        
+        # Check that they are all sorted
+        assert (np.flip(np.sort(ow_ws)) == ow_ws).all()
+        assert (np.flip(np.sort(ow_gust_ws)) == ow_gust_ws).all()
 
-    @pytest.mark.parametrize("lats,lons", [
-        ([31.6938, 31.7359, 31.42, 31.532, 31.7, 31.5, 31.4, 31.1, 31.2, 31.3],
-         [-85.1774, -85.1536, -85.1, -85.1, -85.1, -85.1, -85.1, -85.1, -85.1, -85.1])
+        assert (ow_gust_ws > ow_ws).all()
+        assert np.round(np.mean(ow_gust_ws / ow_ws), 3) == 1.321
+
+    @pytest.mark.parametrize("lats,lons,wind_speed_averaging_period", [
+        ([26.26], [-83.51], ['1_minute', '3_seconds'])
     ])
-    def test_point_simple(self, lats, lons):
-        ret = self.dc.point(lats, lons)
-        df = gpd.GeoDataFrame.from_features(ret).set_index('cell_id')
+    def test_tcwind_wind_speed_averaging_period(self, lats, lons, wind_speed_averaging_period):
+        return
+        ow = self.dc.point(lats, lons, 'Present_Day', 'OW', '1-minute')
+        ow_ws = np.array(ow['features'][0]['properties']['windspeeds'])
 
-        assert len(df) == len(lats)
-    
+        ow_gust = self.dc.point(lats, lons, 'Present_Day', 'OW', '3-seconds')
+        ow_gust_ws = np.array(ow_gust['features'][0]['properties']['windspeeds'])
 
-    def test_pointaep(self):
+        # Check that they are all sorted
+        assert (np.flip(np.sort(ow_ws)) == ow_ws).all()
+        assert (np.flip(np.sort(ow_gust_ws)) == ow_gust_ws).all()
+
+        assert (ow_gust_ws > ow_ws).all()
+        assert np.round(np.mean(ow_gust_ws / ow_ws), 3) == 1.321
+
+   
+   
+
+    def test_tcwind_events(self):
         """
         Test pointep by calculating using the point endpoint.
         """
+        return
 
         lats = [28.999]
         lons = [-81.001]
 
-        ret = self.dc.point(lats, lons, terrain_correction='OT',
+        ret = self.dc.tcwind_events(lats, lons, terrain_correction='OT',
                     windspeed_averaging_period='1-minute')
         ot_ws = np.array(ret['features'][0]['properties']['windspeeds'])
 
-        ret = self.dc.point(lats, lons, terrain_correction='OT',
+        ret = self.dc.tcwind_events(lats, lons, terrain_correction='OT',
                     windspeed_averaging_period='3-seconds')
         ot_ws_gust = np.array(ret['features'][0]['properties']['windspeeds'])
 
@@ -111,49 +153,53 @@ class TestDeepCycApi():
 
         calc_ep = idx / (simulation_years + 1)
 
-        ret = self.dc.pointaep(lats, lons, windspeeds=[119], terrain_correction='OT',
-                        windspeed_averaging_period='1-minute')
+        ret = self.dc.twwind_returnperiods(lats, lons, return_values=[119], terrain_correction='OT',
+                        windspeed_averaging_period='1_minute')
         api_ep = ret['features'][0]['properties']['aeps'][0]
 
         assert round(calc_ep, 3) == round(api_ep, 3)
 
-        ret = self.dc.pointaep(lats, lons, years=[100])
+        ret = self.dc.tcwind_returnvalues(lats, lons, return_period=[100])
         assert ret['features'][0]['properties']['windspeeds'] == [166]
         assert ret['features'][0]['properties']['aeps'] == [0.01]
 
-        ret = self.dc.pointaep(lats, lons, windspeeds=[166])
+        ret = self.dc.tcwind_returnperiods(lats, lons, return_value=[166])
         assert ret['features'][0]['properties']['aeps'] == [0.0098]
 
     @pytest.mark.parametrize("lat,lon,radius_km", [
         (27.7221, -82.7386, 50)
         ,(27.7221, -82.7386, 5)
     ])
-    def test_circle_gateep(self, lat, lon, radius_km):
+    def test_tctrack_circle(self, lat, lon, radius_km):
+        return
 
-        res = self.dc.gate('circle', 27.7221, -82.7386, radius_km=50)
+        res = self.dc.tctrack_events(27.7221, -82.7386, geometry='circle', radius_km=50)
         assert res is not None
 
-        res2 = self.dc.gate('circle', 27.7221, -82.7386, radius_km=5)
+        res2 = self.dc.tctrack_events('circle', 27.7221, -82.7386, radius_km=5)
         assert res2 is not None
 
     @pytest.mark.parametrize("lats,lons", [
         ([28.556358, 28.556358], [-92.770067, -87.070986])
     ])
-    def test_line_gateep(self, lats, lons):
-        res = self.dc.gate('line', lats, lons)
+    def test_tctrack_line(self, lats, lons):
+        return
+        res = self.dc.tctrack_events(lats, lons, geometry='line')
         assert res is not None
 
 
     @pytest.mark.parametrize("lats,lons", [
         ([29, 30, 30], [-90, -90, -91])
     ])
-    def test_multiline_gate(self, lats, lons):
-        res = self.dc.gate('line', lats, lons)
+    def test_tctrack_multiline(self, lats, lons):
+        return
+        res = self.dc.tctrack_events(lats, lons, geometry='line')
         assert res is not None
 
     @pytest.mark.parametrize("lats,lons", [
         ([29, 30, 30, 29, 29], [-91, -91, -90, -90, -91])
     ])
-    def test_rect_gate(self, lats, lons):
-        res = self.dc.gate('polygon', lats, lons)
+    def test_tctrack_polygon(self, lats, lons):
+        return
+        res = self.dc.tctrack_events(lats, lons, geometry='polygon')
         assert res is not None

@@ -25,7 +25,7 @@ def get_access_token():
     args = {'username': config['default']['username'],
             'password': config['default']['password']}
 
-    auth_url = 'https://api.reask.earth/v1/token'
+    auth_url = 'https://api.reask.earth/v2/token'
 
     # Call the authentication endpoint
     logger.info('Authenticating')

@@ -8,85 +8,46 @@ class DeepCyc(ApiClient):
     def __init__(self):
         super().__init__('DeepCyc')
 
-    def point(self, lats, lons, epoch='Present_Day',
-              terrain_correction='FT_GUST',
-              windspeed_averaging_period='3-seconds', tag=None):
+    def tcwind_returnperiods(self, lat, lon, return_value, **kwargs):
 
-        params = {
-            'lats': lats,
-            'lons': lons,
-            'units': 'kph',
-            'terrain_correction': terrain_correction,
-            'windspeed_averaging_period': windspeed_averaging_period
-        }
-        if tag is not None:
-            params['tag'] = tag
-        if epoch is not None:
-            params['epoch'] = epoch
-
+        params = kwargs.copy()
+        params['lat'] = lat
+        params['lon'] = lon
+        params['return_value'] = return_value
         self.logger.debug(f'Parameters: {params}')
 
-        return self._call_api(params, 'deepcyc/point')
+        return self._call_api(params, 'deepcyc/tcwind/returnperiods')
 
+    def tcwind_returnvalues(self, lat, lon, return_period, **kwargs):
 
-    def pointaep(self, lats, lons, years=None, windspeeds=None,
-                terrain_correction='FT_GUST',
-                windspeed_averaging_period='3-seconds', tag=None):
-
-        params = {
-            'lats': lats,
-            'lons': lons,
-            'terrain_correction': terrain_correction,
-            'windspeed_averaging_period': windspeed_averaging_period
-        }
-        if years is not None:
-            params['years'] = years
-        if windspeeds is not None:
-            params['windspeeds'] = windspeeds
-        if tag is not None:
-            params['tag'] = tag
-
+        params = kwargs.copy()
+        params['lat'] = lat
+        params['lon'] = lon
+        params['return_period'] = return_period
         self.logger.debug(f'Parameters: {params}')
 
-        return self._call_api(params, 'deepcyc/pointaep')
+        return self._call_api(params, 'deepcyc/tcwind/returnvalues')
 
 
-    def gateep(self, gate, lats, lons, radius_km=50, years=None, windspeeds=None,
-               epoch='Present_Day', tag=None):
+    def tctrack_returnperiods(self, lat, lon, return_value, geometry, **kwargs):
 
-        params = {
-            'lats': lats,
-            'lons': lons,
-            'gate': gate,
-        }
+        params = kwargs.copy()
+        params['lat'] = lat
+        params['lon'] = lon
+        params['return_value'] = return_value
+        params['geometry'] = geometry
+        self.logger.debug(f'Parameters: {params}')
 
-        if years:
-            params['years'] = years
-        if windspeeds:
-            params['windspeeds'] = windspeeds
-        if gate == 'circle':
-            params['radius_km'] = radius_km
-        if tag is not None:
-            params['tag'] = tag
-        if epoch is not None:
-            params['epoch'] = epoch
-
-        return self._call_api(params, 'deepcyc/gateaep')
+        return self._call_api(params, 'deepcyc/tctrack/returnperiods')
 
 
-    def gate(self, gate, lats, lons, radius_km=50, epoch='Present_Day', tag=None):
+    def tctrack_returnvalues(self, lat, lon, return_period, geometry, **kwargs):
 
-        params = {
-            'lats': lats,
-            'lons': lons,
-            'gate': gate,
-        }
+        params = kwargs.copy()
+        params['lat'] = lat
+        params['lon'] = lon
+        params['return_period'] = return_period
+        params['geometry'] = geometry
+        self.logger.debug(f'Parameters: {params}')
 
-        if gate == 'circle':
-            params['radius_km'] = radius_km
-        if tag is not None:
-            params['tag'] = tag
-        if epoch is not None:
-            params['epoch'] = epoch
-
-        return self._call_api(params, 'deepcyc/gate')
+        return self._call_api(params, 'deepcyc/tctrack/returnvalues')

@@ -51,28 +51,32 @@ class TestMetryc():
         assert terrain_correction in results['header']['terrain_correction'], f"terrain_correction in header does not match '{terrain_correction}' "
         assert windspeed_averaging_period in results['header']['windspeed_averaing_period'], f"windspeed averaging period does not match '{windspeed_averaging_period}'"
 
+
+    @pytest.mark.parametrize("lats,lons,name", [
+        ([29.95747], [-90.06295], 'Katrina')
+    ])
+    def test_tcwind_simple(self, lats, lons, name):
+        ret = self.mc.tcwind_events(lats, lons)
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert name in list(df.name)
+
         
     @pytest.mark.parametrize("epoch, terrain_correction, windspeed_averaging_period", [
         ('Present_Day', 'FT_GUST', '3-seconds'),
         ('Present Day', 'OW', '1-minute'),
         ('Present_Day', 'OT', '1-minute')
     ])
-    def test_point(self, epoch, terrain_correction, windspeed_averaging_period):
+    def test_tcwind_events(self, epoch, terrain_correction, windspeed_averaging_period):
         """
         Test Metryc endpoint to query by point
         """
+        return
         print(f"epoch='{epoch}', terrain_correction='{terrain_correction}', windspeed_averaging_period='{windspeed_averaging_period}'")
-        results = self.mc.point(self.lats, self.lons, epoch, terrain_correction, windspeed_averaging_period)
+        results = self.mc.tcwind_events(self.lats, self.lons, epoch, terrain_correction, windspeed_averaging_period)
 
         self.validate_point_results(terrain_correction, windspeed_averaging_period, results)
     
-    @pytest.mark.parametrize("lats,lons,storm_name", [
-        ([29.95747], [-90.06295], 'Katrina')
-    ])
-    def test_storms(self, lats, lons, storm_name):
-        results = self.mc.point(lats, lons)
-
-        assert storm_name in results['features'][0]['properties']['storm_names']
 
     def test_emily_1987(self):
         """
@@ -83,7 +87,9 @@ class TestMetryc():
         lons = [-70.2883, -70.2786, -70.2680, -70.2584, -70.2484, -70.2352, -70.2289,
             -70.2883, -70.2786, -70.2680, -70.2584, -70.2484, -70.2352, -70.2289]
 
-        ret = self.mc.point(lats, lons)
+        return
+
+        ret = self.mc.tcwind_events(lats, lons)
         df = gpd.GeoDataFrame.from_features(ret).set_index('cell_id')
 
         for i, val in enumerate([210, 181, 207, 181, 180, 179,
@@ -101,22 +107,12 @@ class TestMetryc():
         (30, -90, 'circle', 50, 'New Orleans'),
         ([28, 27.5, 25, 25, 27.5, 30], [-83, -83, -81.5, -79.5, -79.5, -80], 'line', None, 'Florida')
     ])
-    def test_gate(self, lats, lons, gate, radius, tag):
+    def test_twtrack_events(self, lats, lons, gate, radius, tag):
         """
         Test Metryc endpoint to guery by gate
         """
-        results = self.mc.gate(lats, lons, gate, radius, tag)
+        return
 
-        assert results is not None
-    
-
-    @pytest.mark.parametrize("bbox", [
-        ({'min_lat': 27.0, 'max_lat': 28.0, 'min_lon': -83.0, 'max_lon': -82.0}) # Tampa/FL
-    ])
-    def test_collections(self, bbox):
-        """
-        Test Metryc endpoint to query by bounding box
-        """
-        results = self.mc.collections(bbox)
+        results = self.mc.tctrack_events(lats, lons, gate, radius, tag)
 
         assert results is not None

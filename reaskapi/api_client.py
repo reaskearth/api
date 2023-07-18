@@ -16,7 +16,32 @@ class ApiClient:
         """
         self.access_token = get_access_token()
         self.product = product
-        self.base_url = 'https://api.reask.earth/v1'
+        self.base_url = 'https://api.reask.earth/v2'
+
+        self.headers = {'Content-Type':'application/json',
+             'Authorization': f'Bearer {self.access_token}'}
+
+
+    def tcwind_events(self, lat, lon, **kwargs):
+
+        params = kwargs.copy()
+        params['lat'] = lat
+        params['lon'] = lon
+        self.logger.debug(f'Parameters: {params}')
+
+        return self._call_api(params, f'{self.product.lower()}/tcwind/events')
+
+
+    def tctrack_events(self, lat, lon, geometry, **kwargs):
+
+        params = kwargs.copy()
+        params['lat'] = lat
+        params['lon'] = lon
+        params['geometry'] = geometry
+        self.logger.debug(f'Parameters: {params}')
+
+        return self._call_api(params, f'{self.product.lower()}/tctrack/events')
+
 
     def _call_api(self, params, endpoint):
         """
@@ -25,20 +50,14 @@ class ApiClient:
 
         url = f'{self.base_url}/{endpoint}'
 
-        for k in ['lats', 'lons', 'years', 'windspeeds']:
-            if k in params and not isinstance(params[k], list):
-                params[k] = [params[k]]
-
-        params['access_token'] = self.access_token
-        params['peril'] = 'TC_Wind'
-
         start_time = time.time()
 
         # using with block to ensure connection resources are properly released
         with requests.Session() as session:
 
             # ensure that the request url is not too long
-            req = requests.Request('GET', url, params=params).prepare()
+            req = requests.Request('GET', url, params=params,
+                                     headers=self.headers).prepare()
             url_bytes = len(req.url)
             if url_bytes > URL_MAX_BYTES:
                 print('Error: request url is too long. {} > {} bytes'.format(url_bytes, URL_MAX_BYTES), file=sys.stderr)
