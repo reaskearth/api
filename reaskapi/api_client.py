@@ -63,14 +63,14 @@ class ApiClient:
                 print('Error: request url is too long. {} > {} bytes'.format(url_bytes, URL_MAX_BYTES), file=sys.stderr)
                 return None
 
-            self.logger.debug(f'Calling URL {url}')
             # call the API endpoint
             res = session.send(req)
 
             # throw an exception in case of an error
             if res.status_code != 200:
-                self.logger.debug(res.text)
-                raise Exception(f'API returned HTTP {res.status_code}')
+                err_msg = res.json()['detail']
+                self.logger.debug(err_msg)
+                raise Exception(f"API returned HTTP {res.status_code} with {err_msg}")
 
         self.logger.info(f"querying {endpoint} took {round((time.time() - start_time) * 1000)}ms")
         self.logger.debug(res.json())
