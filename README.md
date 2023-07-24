@@ -119,7 +119,6 @@ After a succesfull execution of `get_hazard_csv.py` utility you can check the re
 cat DeepCyc_RP20y.csv
 ```
 
-
 ## DeepCyc Endpoint Usage
 
 The DeepCyc API has four endpoints **point**, **pointaep**, **gate** and **gateaep**.
