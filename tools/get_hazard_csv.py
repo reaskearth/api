@@ -17,7 +17,7 @@ LON_NAMES = ['longitude', 'Longitude', 'lon', 'Lon']
 
 
 def get_hazard(all_lats, all_lons, terrain_correction,
-               windspeed_averaging_period, product='deepcyc', return_period=None):
+               wind_speed_averaging_period, product='deepcyc', return_period=None):
 
     if product.lower() == 'deepcyc':
         m = DeepCyc()
@@ -38,38 +38,15 @@ def get_hazard(all_lats, all_lons, terrain_correction,
     for lats, lons in zip(np.array_split(all_lats, num_calls),
                           np.array_split(all_lons, num_calls)):
         if m.product == 'DeepCyc' and return_period is not None:
-            ret = m.pointep(lats, lons, years=return_period,
-                             terrain_correction=terrain_correction,
-                             windspeed_averaging_period=windspeed_averaging_period)
+            ret = m.tcwind_returnvalue(lats, lons, years=return_period,
+                                        terrain_correction=terrain_correction,
+                                        wind_speed_averaging_period=wind_speed_averaging_period)
         else:
-            ret = m.point(lats, lons,
+            ret = m.tcwind_events(lats, lons,
                           terrain_correction=terrain_correction,
-                          windspeed_averaging_period=windspeed_averaging_period)
+                          wind_speed_averaging_period=wind_speed_averaging_period)
 
-        for f in ret['features']:
-            props = f['properties']
-            for i, ws in enumerate(props['windspeeds']):
-                data['longitude'].append(props['longitude'])
-                data['latitude'].append(props['latitude'])
-                data['windspeed'].append(ws)
-                data['cell_id'].append(props['cell_id'])
-
-                if m.product == 'DeepCyc' and return_period is not None:
-                    data['return_period'].append(return_period)
-                elif m.product == 'DeepCyc':
-                    data['storm_name'].append(props['event_ids'][i])
-                    data['storm_season'].append(props['year_ids'][i])
-                else:
-                    data['storm_name'].append(props['storm_names'][i])
-                    data['storm_season'].append(props['storm_seasons'][i])
-
-                for k in ret['header']:
-                    if k in data:
-                        data[k].append(ret['header'][k])
-                    else:
-                        data[k] = [ret['header'][k]]
-
-    df = pd.DataFrame(data=data).set_index('cell_id')
+            df = gpd.GeoDataFrame.from_features(ret)
 
     return df
 

@@ -1,5 +1,5 @@
 
-# Reask API
+# Reask API Client
 
 ## Introduction
 
@@ -18,7 +18,11 @@ An up-to-date version of this README can be found here: https://github.com/reask
 |--------|--------|
 | main | [![Build Status](https://github.com/reaskearth/api/actions/workflows/github-actions-ci.yaml/badge.svg)](https://github.com/reaskearth/api/actions/workflows/github-actions-ci.yaml) |
 
-##<a name="quickstart"></a> Quickstart
+## OpenAPI Documentation
+
+The interactive documentation can be found here: https://api.reask.earth/v2/docs. This 
+
+## Quickstart
 
 Put your Reask credentials into a file called `.reask` in your home directory using the following format:
 
@@ -35,6 +39,7 @@ chmod 600 ~/.reask
 ```
 
 ### Source code
+
 Take a look at the Python3 example code here: https://github.com/reaskearth/api/.
 
 This can be downloaded by either clicking on the green **Code** button or using the `git` command as follows:
@@ -47,13 +52,14 @@ Once downloaded you can test the code by running some of the examples under the 
 
 ```
 cd reaskapi/example_code
-python3 ./deepcyc_point.py
-python3 ./deepcyc_pointaep.py
+python3 ./deepcyc_tcwind_returnvalue.py
+python3 ./metryc_tcwind_events.py
 ```
 
-This should leave a `.json` file in the current directory containing the results.
+This should leave a `.json` or `.csv` file in the current directory containing the results.
 
-## API Authentication
+
+## Authentication
 
 The API uses an OpenID Connect (IODC) authentication flow whereby a username/email and password are used to get an access token, which is then used for subsequent API calls. Please keep your password in a secure place.
 
@@ -85,7 +91,7 @@ Will output:
 The `access_token` value is then used as a `GET` request parameter as shown in the following code snippets. The example code (https://github.com/reaskearth/api/blob/main/example_code/auth.py) demonstrates how to use credentials which are stored in a hidden file.
 
 
-## API Tools Usage
+## Tools Usage
 
 The `tools/` directory contains some command line utilities that make it easy to use the API for common tasks.
 
@@ -119,510 +125,10 @@ After a succesfull execution of `get_hazard_csv.py` utility you can check the re
 cat DeepCyc_RP20y.csv
 ```
 
-## DeepCyc Endpoint Usage
+## Endpoint Usage
 
-The DeepCyc API has four endpoints **point**, **pointaep**, **gate** and **gateaep**.
-
-### Point
-
-`v1/deepcyc/point` returns maximum TC surface windspeeds of all (synthetic) events impacting a given latitude, longitude point during the given epoch. The windspeeds can be returned with a range of different terrain corrections:
-
-- `FT_GUST`: Full Terrain 3-second gust correction. Uses our ML terrain correction algorithm to calculate over-land gust depending on such things as land-use, topography, wind direction etc.
-- `OW`: Open Water. No correction is applied.
-- `NT`: No Terrain. As above, no correction is applied.
-- `OT`: Open Terrain. An flat grassland correction is applied.
-
-In addition either a `3-second` or `1-minute` wind averaging period can be selected. For the `ft_gust` terrain type only `3-second` wind averaging is supported.
-
-For example:
-
-```Python
-url = 'https://api.reask.earth/v1/deepcyc/point'
-params = {
-    'access_token': auth_res['access_token'], # access token from auth step
-    'peril': 'TC_Wind',
-    'epoch': 'Present_Day',
-    'terrain_correction': 'FT_GUST',
-    'windspeed_averaging_period': '3-seconds',
-    'units': 'mph',
-    'lats': [26.26],
-    'lons': [-83.51],
-}
-
-res = requests.get(url, params=params)
-assert res.status_code == 200, 'API GET request failed'
-```
-
-Returns:
-
-```javascript
-{
-    "features": [
-        {
-            "geometry": {
-                "coordinates": [
-                    [
-                        ...
-                    ]
-                ],
-                "type": "Polygon"
-            },
-            "properties": {
-                "cell_id": 438894232,
-                "event_ids": [
-                    "96e41f9553fb059d2bb1",
-                    ...
-                    "7dd6a559764dd9a21455"
-                ],
-                "latitude": 26.26,
-                "longitude": -83.51,
-                "windspeeds": [
-                    250.0,
-                    ...
-                    37.0
-                ],
-                "year_ids": [
-                    "1998_0664_RAN",
-                    ...
-                    "1980_0020_RAN"
-                ]
-            },
-            "type": "Feature"
-        }
-    ],
-    "header": {
-        "epoch": "Present_Day",
-        "product": "DeepCyc-2.0.6",
-        "simulation_years": 41000,
-        "terrain_correction": "FT_GUST",
-        "units": "mph",
-        "wind_averaing_period": "3-seconds"
-    },
-    "type": "FeatureCollection"
-}
-```
-
-The returned document is a valid [GeoJSON](https://en.wikipedia.org/wiki/GeoJSON) document describing the geometry of the requested locations (also known as `features`).
-
-The `properties` attribute of each feature contains the following fields:
-
-- `cell_id`: this is a globally unique identifier for the returned grid cell. There is example code showing how to map these ids to and from cells at `example_code/grid_cell_id_map.py`.
-- `event_ids`: a list of identifiers for the events that have impacted the requested location.
-- `windspeeds`: the maximum windspeeds of the aforementioned events at the requested location.
-- `years_ids`: the identifiers of the synthetic years in which the aforementioned events occur.
-
-
-### Point AEP (Annual Exceedance Probability)
-
-`v1/deepcyc/pointaep` returns TC surface windspeeds at a requested latitude, longitude point and annual exceedance probability. It can also return an AEP from requested windspeeds. As with the `point` endpoint the windspeeds can be returned as either different terrain corrections, wind averaging periods and units.
-
-For example to request windspeeds at AEPs of 0.1, 0.01, 0.004:
-
-```Python
-url = 'https://api.reask.earth/v1/deepcyc/pointaep'
-params = {
-    'access_token': auth_res['access_token'], # access token from auth step
-    'peril': 'TC_Wind',
-    'tag': 'Miami Beach',
-    'epoch': 'Present_Day',
-    'lats': [25.80665],
-    'lons': [-80.12412],
-    'aeps': [0.1, 0.01, 0.004]
-}
-
-res = requests.get(url, params=params)
-assert res.status_code == 200, 'API GET request failed'
-```
-
-Or, equivalently for annual return periods of 10, 100, 250 years:
-```
-del params['aeps']
-params['years'] = [10, 100, 250]
-res = requests.get(url, params=params)
-```
-
-Returns:
-
-```javascript
-{
-    "header": {
-        "epoch": "Present_Day",
-        "product": "DeepCyc-2.0.6",
-        "simulation_years": 41000,
-        "tag": "Miami Beach",
-        "terrain_correction": "FT_GUST",
-        "units": "kph",
-        "windspeed_averaing_period": "3-seconds"
-    },
-    "type": "FeatureCollection",
-    "features": [
-        {
-            "geometry": {
-                "coordinates": [
-                ...
-                ],
-                "type": "Polygon"
-            },
-            "properties": {
-                "aeps": [
-                    0.1,
-                    0.01,
-                    0.004
-                ],
-                "cell_id": 437161971,
-                "latitude": 25.80665,
-                "longitude": -80.12412,
-                "windspeeds": [
-                    141,
-                    237,
-                    266
-                ]
-            },
-            "type": "Feature"
-        }
-    ]
-}
-```
-
-The example code includes a request for the AEPs at given windspeeds.
-
-
-### Gate
-
-`v1/deepcyc/gate` returns TC maximum surface windspeeds for all events crossing or within a gate during a given epoch. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction / open water.
-
-The following example will search using a circle with 50km radius:
-
-```Python
-url = 'https://api.reask.earth/v1/deepcyc/gate'
-params = {
-    'access_token': auth_res['access_token'], # access token from auth step
-    'peril': 'TC_Wind',
-    'epoch': 'Present_Day',
-    'gate': 'circle',
-    'lats': [30],
-    'lons': [-90.0],
-    'radius_km': 50,
-}
-
-res = requests.get(url, params=params)
-assert res.status_code == 200, 'API GET request failed'
-```
-
-Returns:
-
-```javascript
-{
-    "features": [
-        {
-            "geometry": {
-                "coordinates": [
-                
-                ],
-                "type": "Polygon"
-            },
-            "properties": {
-                "event_id": [
-                    "d035b43ffbc1a7a47812",
-                    
-                    "f876b79b3ef8330c6222"
-                ],
-                "location": [
-                    {
-                        "coordinates": [
-                            -89.840792,
-                            30.492749
-                        ],
-                        "type": "Point"
-                    },
-                    ...
-                    {
-                        "coordinates": [
-                            -89.985364,
-                            29.482514
-                        ],
-                        "type": "Point"
-                    }
-                ],
-                "windspeed": [
-                    359,
-                    ...
-                    2
-                ],
-                "year_id": [
-                    "2016_0899_RAN",
-                    ...
-                    "2005_0310_RAN"
-                ]
-            },
-            "type": "Feature"
-        }
-    ],
-    "header": {
-        "epoch": "Present_Day",
-        "product": "DeepCyc-2.0.6",
-        "simulation_years": 41000,
-        "terrain_correction": "OW",
-        "units": "km/h",
-        "wind_averaing_period": "1-minute"
-    },
-    "type": "FeatureCollection"
-}
-```
-
-For lines and polygons the parameters must include latitudes and longitudes of the vertices:
-
-Example for a line:
-```python
-params = {
-    'access_token': auth_res['access_token'], # access token from auth step
-    'peril': 'TC_Wind',
-    'epoch': 'Present_Day',
-    'gate': 'line',
-    'lats': [29, 30],
-    'lons': [-91, -90],
-}
-```
-
-For polygons the start and end coordinates should have the same latitude and longitude:
-
-```python
-params = {
-    'access_token': auth_res['access_token'], # access token from auth step
-    'peril': 'TC_Wind',
-    'epoch': 'Present_Day',
-    'gate': 'line',
-    'lats': [29, 30, 30, 29, 29],
-    'lons': [-91, -91, -90, -90, -91],
-}
-```
-
-
-### Gate AEP (Gate Annual Exceedance Probability)
-
-`v1/deepcyc/gateaep` returns TC maximum surface windspeeds crossing/entering a gate at a specified annual exceedance probability. The gate can be a line, a polygon or a circle. The values returned are 1-minute averaged with no terrain correction. For example:
-
-```Python
-url = 'https://api.reask.earth/v1/deepcyc/gateep'
-params = {
-    'access_token': auth_res['access_token'], # access token from auth step
-    'peril': 'TC_Wind',
-    'epoch': 'Present_Day',
-    'gate': 'circle',
-    'lats': [30],
-    'lons': [-90.0],
-    'radius_km': 50,
-    'aeps': [0.05, 0.02, 0.005]
-}
-
-res = requests.get(url, params=params)
-assert res.status_code == 200, 'API GET request failed'
-```
-
-Results:
-```javascript
-{
-    "header": {
-        "epoch": "Present_Day",
-        "product": "DeepCyc-2.0.6",
-        "simulation_years": 41000,
-        "terrain_correction": "OW",
-        "units": "km/h",
-        "wind_averaing_period": "1-minute"
-    },
-    "type": "FeatureCollection",
-    "features": [
-        {
-            "geometry": {
-                "coordinates": [
-                    [
-                        ...
-                    ]
-                ],
-                "type": "Polygon"
-            },
-            "properties": {
-                "event_id": [
-                    "d035b43ffbc1a7a47812",
-                    ...
-                    "f876b79b3ef8330c6222"
-                ],
-                "location": [
-                    ...
-                ],
-                "windspeed": [
-                    359,
-                    ...
-                    2
-                ],
-                "year_id": [
-                    "2016_0899_RAN",
-                    ...
-                    "2005_0310_RAN"
-                ]
-            },
-            "type": "Feature"
-        }
-    ]
-}
-```
-
-## Metryc Endpoint Usage
-
-The Metryc API supports **point** and **gate** endpoints and returning results in GeoJSON with storms names, seasons and windspeeds.
-
-### Point
-
-`v1/metryc/point` returns estimated TC surface windspeeds at a requested latitude, longitude point for all historical storms within a set of years. The windspeeds can be returned as either a terrain-corrected 3-second gust, or an "open water" or "open terrain" corrected 1-minute averaging period. Currently only the period 1980 to 2022 is supported. For example:
-
-
-```Python
-url = 'https://api.reask.earth/v1/metryc/point'
-params = {
-    'access_token': auth_res['access_token'], # access token from auth step
-    'peril': 'TC_Wind',
-    'tag': 'Miami Beach',
-    'lats': [25.80665],
-    'lons': [-80.12412],
-}
-
-res = requests.get(url, params=params)
-assert res.status_code == 200, 'API GET request failed'
-```
-
-Returns:
-
-```javascript
-{
-    "header": {
-        "product": "Metryc-1.0.1",
-        "reporting_period": "1980 to 2021",
-        "tag": "Miami Beach",
-        "terrain_correction": "FT_GUST",
-        "units": "kph",
-        "windspeed_averaing_period": "3-seconds"
-    },
-    "type": "FeatureCollection",
-    "features": [
-        {
-            "geometry": {
-                "coordinates": [
-                    ...
-                ],
-                "type": "Polygon"
-            },
-            "properties": {
-                "cell_id": 437161971,
-                "latitude": 25.80665,
-                "longitude": -80.12412,
-                "storm_names": [
-                    "Charley",
-                    ...
-                    "Abby"
-                ],
-                "storm_seasons": [
-                    "2004",
-                    ...
-                    "1968"
-                ],
-                "windspeeds": [
-                    115.0,
-                    ...
-                    87.0
-                ]
-            },
-            "type": "Feature"
-        }
-    ]
-}
-```
-
-Not that the above list has been shortened.
-
-### Gate
-
-`v1/metryc/gate` returns agency recorded TC surface windspeeds entering or within a gate. The values returned are 1-minute averaged and the underlying dataset used is IBTrACS (https://www.ncei.noaa.gov/products/international-best-track-archive). You can think of this endpoint as an alternative way to query the IBTrACS database and it is useful for comparing the Reask products with observed TC risk.
-
-```Python
-url = 'https://api.reask.earth/v1/metryc/gate'
-params = {
-    'access_token': auth_res['access_token'], # access token from auth step
-    'peril': 'TC_Wind',
-    'tag': 'New Orleans',
-    'lats': [30],
-    'lons': [-90],
-    'gate': 'circle',
-    'radius_km': 50
-}
-
-res = requests.get(url, params=params)
-assert res.status_code == 200, 'API GET request failed'
-```
-
-Results:
-```javascript
-{
-    "features": [
-        {
-            "geometry": {
-                "coordinates": [
-                    ...
-                ],
-                "type": "Polygon"
-            },
-            "properties": {
-                "event_id": [
-                    "2005236N23285",
-                    ...
-                    "2010203N22286"
-                ],
-                "location": [
-                    {
-                        "coordinates": [
-                            -89.6,
-                            29.670617
-                        ],
-                        "type": "Point"
-                    },
-                    ...
-                    {
-                        "coordinates": [
-                            -89.984022,
-                            29.48258
-                        ],
-                        "type": "Point"
-                    }
-                ],
-                "name": [
-                    "Katrina",
-                    ...
-                    "Bonnie"
-                ],
-                "windspeed": [
-                    201,
-                    ...
-                    41
-                ],
-                "year_id": [
-                    2005,
-                    ...
-                    2010
-                ]
-            },
-            "type": "Feature"
-        }
-    ],
-    "header": {
-        "product": "Metryc-1.0.1",
-        "tag": "New Orleans",
-        "terrain_correction": "OW",
-        "units": "km/h",
-        "windspeed_averaing_period": "1-minute"
-    },
-    "type": "FeatureCollection"
-}
-```
+Summary documentation for the DeepCyc and Metryc API endpoints can be found here: https://api.reask.earth/v2/docs
 
 ## Contact
 
-email: nic at reask.earth
+email: nic at reask.earth or fabio at reask.earth

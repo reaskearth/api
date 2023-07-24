@@ -33,7 +33,6 @@ def generate_random_points(min_lat, max_lat, min_lon, max_lon, n_points):
 class TestDeepcyc():
     dc = DeepCyc()
 
-
     @pytest.mark.parametrize("lat,lon", [
         # CONUS, Australia
         ([31.6938, -20.35685],
@@ -194,24 +193,13 @@ class TestDeepcyc():
         assert len(df) > 14000
 
     @pytest.mark.parametrize("lats,lons", [
-        ([28.556358, 28.556358], [-88.770067, -87.070986])
+        ([29, 30, 30], [-90, -90, -91])
     ])
     def test_tctrack_returnperiod_line(self, lats, lons):
         ret = self.dc.tctrack_returnperiods(lats, lons, 119, 'line')
         df = gpd.GeoDataFrame.from_features(ret)
-        import pdb
-        pdb.set_trace()
-
-    @pytest.mark.parametrize("lats,lons", [
-        ([29, 30, 30], [-90, -90, -91])
-    ])
-    def test_tctrack_returnperiod_multiline(self, lats, lons):
-        ret = self.dc.tctrack_returnperiods(lats, lons, 119, 'line')
-        df = gpd.GeoDataFrame.from_features(ret)
-        import pdb
-        pdb.set_trace()
-
-
+        df.iloc[0].wind_speed == 119
+        df.iloc[0].return_period < 10
 
     @pytest.mark.parametrize("lats,lons", [
         ([29, 30, 30, 29, 29], [-91, -91, -90, -90, -91])
@@ -219,5 +207,38 @@ class TestDeepcyc():
     def test_tctrack_returnperiod_polygon(self, lats, lons):
         ret = self.dc.tctrack_returnperiods(lats, lons, 119, 'polygon')
         df = gpd.GeoDataFrame.from_features(ret)
-        import pdb
-        pdb.set_trace()
+        df.iloc[0].wind_speed == 119
+        df.iloc[0].return_period < 10
+
+    @pytest.mark.parametrize("lats,lons", [
+        ([-20.5, -20.3, -20.3536], [148.5, 149.5, 148.9573]),
+    ])
+    def test_tcwind_perms(self, lats, lons):
+
+        tmp_dc = DeepCyc(config_section='hamilton_island')
+        # Use the DeepCyc client to call the API
+        return_periods = [10, 25, 50, 100, 250, 500]
+        ret1 = tmp_dc.tcwind_returnvalues(lats, lons, return_periods)
+        df1 = gpd.GeoDataFrame.from_features(ret1)
+
+        assert len(set(df1.cell_id)) == 1
+        assert ret1['header']['message'] == 'Error: one or more requested locations either unsupported or unauthorized.'
+
+        lats = [-20.3536]
+        lons = [148.9573]
+        ret2 = tmp_dc.tcwind_returnvalues(lats, lons, return_periods)
+        df2 = gpd.GeoDataFrame.from_features(ret2)
+
+        assert ret1['features'] == ret2['features']
+
+    @pytest.mark.parametrize("lats,lons", [
+        ([28.556358, 28.556358], [-88.770067, -87.070986])
+    ])
+    def test_tctrack_noperms(self, lats, lons):
+
+        tmp_dc = DeepCyc(config_section='hamilton_island')
+        try:
+            ret = tmp_dc.tctrack_events(lats, lons, 'line')
+            assert False, 'Should not get here'
+        except Exception as e:
+            assert '403' in str(e)

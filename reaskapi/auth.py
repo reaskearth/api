@@ -7,7 +7,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-def get_access_token():
+def get_access_token(config_section='default'):
     # Be sure to have a .reask credentials file in your HOME directory!
     # The format of the ~/.reask config containing username and password is:
     #[default]
@@ -22,8 +22,8 @@ def get_access_token():
     config = configparser.ConfigParser()
     config.read(config_file)
 
-    args = {'username': config['default']['username'],
-            'password': config['default']['password']}
+    args = {'username': config[config_section]['username'],
+            'password': config[config_section]['password']}
 
     auth_url = 'https://api.reask.earth/v2/token'
 

@@ -5,8 +5,8 @@ from reaskapi.api_client import ApiClient
 
 class DeepCyc(ApiClient):
 
-    def __init__(self):
-        super().__init__('DeepCyc')
+    def __init__(self, config_section='default'):
+        super().__init__('DeepCyc', config_section=config_section)
 
     def tcwind_returnperiods(self, lat, lon, return_value, **kwargs):
 

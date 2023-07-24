@@ -10,11 +10,11 @@ URL_MAX_BYTES = 2**15
 class ApiClient:
     logger = logging.getLogger(__name__)
 
-    def __init__(self, product):
+    def __init__(self, product, config_section='default'):
         """
         Initialize client getting access token
         """
-        self.access_token = get_access_token()
+        self.access_token = get_access_token(config_section)
         self.product = product
         self.base_url = 'https://api.reask.earth/v2'
 

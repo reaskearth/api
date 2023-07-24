@@ -60,3 +60,15 @@ class TestMetryc():
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert len(df) > 30
+
+    @pytest.mark.parametrize("lats,lons", [
+        ([29.95747], [-90.06295])
+    ])
+    def test_tcwind_noperms(self, lats, lons):
+
+        tmp_mc = Metryc(config_section='hamilton_island')
+        try:
+            ret = tmp_mc.tcwind_events(lats, lons)
+            assert False, 'Should not get here'
+        except Exception as e:
+            assert '403' in str(e)
