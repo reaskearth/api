@@ -8,9 +8,10 @@ The Reask API currently supports two products:
  * [DeepCyc](https://reask.earth/products/): a high-resolution probabilistic view of tropical cyclone (TC) risk everywhere in the world, both under current as well as future climate scenarios.
  * [Metryc](https://reask.earth/products/): high-resolution tropical cyclone (TC) windspeed estimates for historical events based on our ML windfield model and incorporating agency best track data.
 
-### Previous Versions
+### API Versions
 
-v1: https://github.com/reaskearth/api/tree/v1
+ * [v1](https://github.com/reaskearth/api/tree/v1)
+ * [v2](https://github.com/reaskearth/api/tree/main)
 
 
 ## Package Status
@@ -20,10 +21,11 @@ v1: https://github.com/reaskearth/api/tree/v1
 | main | [![Build Status](https://github.com/reaskearth/api/actions/workflows/github-actions-ci.yaml/badge.svg)](https://github.com/reaskearth/api/actions/workflows/github-actions-ci.yaml) |
 
 
-## OpenAPI Documentation
+## OpenAPI Documentation and Examples
 
 The interactive documentation can be found here: https://api.reask.earth/v2/docs. You will need to authenticate using you Reask credentials by clicking on the **lock** icon.
 
+Example code for all endpoints can be found in the `tests` directory.
 
 ## Quickstart
 
@@ -69,12 +71,6 @@ After a succesfull execution of `get_hazard_csv.py` utility you can check the re
 ```Bash
 cat DeepCyc_RP_100yr.csv
 ```
-
-## Endpoint Usage
-
-Further documentation for the DeepCyc and Metryc API endpoints can be found here: https://api.reask.earth/v2/docs
-
-Example code for all endpoints can be found in the `tests` directory.
 
 ## Contact
 
