@@ -12,6 +12,10 @@ Further information can be found on our website (https://reask.earth/products/).
 
 An up-to-date version of this README can be found here: https://github.com/reaskearth/api/blob/main/README.md
 
+## Previous Versions
+
+v1: https://github.com/reaskearth/api/tree/v1
+
 ## Package Status
 
 | Branch | Status |
