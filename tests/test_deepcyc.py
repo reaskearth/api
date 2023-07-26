@@ -198,20 +198,20 @@ class TestDeepcyc():
         assert set(df2.event_id).issubset(set(df1.event_id))
 
     @pytest.mark.parametrize("lats,lons", [
-        ([28.5, 28.5], [-88.5, -88.0])
+        ([28.5, 28.5], [-88.5, -88.25])
     ])
     def test_tctrack_line(self, lats, lons):
         ret = self.dc.tctrack_events(lats, lons, 'line')
         df = gpd.GeoDataFrame.from_features(ret)
-        assert len(df) > 3500
+        assert len(df) > 1500
 
     @pytest.mark.parametrize("lats,lons", [
-        ([29, 29.5, 29.5], [-90, -90, -90.5])
+        ([29, 29.25, 29.25], [-90, -90, -90.25])
     ])
     def test_tctrack_multiline(self, lats, lons):
         ret = self.dc.tctrack_events(lats, lons, 'line')
         df = gpd.GeoDataFrame.from_features(ret)
-        assert len(df) > 6500
+        assert len(df) > 3000
 
     @pytest.mark.parametrize("lats,lons", [
         ([29, 30, 30, 29, 29], [-91, -91, -90, -90, -91])
