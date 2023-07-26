@@ -170,7 +170,7 @@ class TestDeepcyc():
     ])
     def test_tctrack_circle(self, lat, lon):
 
-        radius_km = 50
+        radius_km = 10
         ret1 = self.dc.tctrack_events(lat, lon, 'circle', radius_km=radius_km)
         geom1 = shapely.from_geojson(json.dumps(ret1['header']['query_geometry']))
 
@@ -194,31 +194,34 @@ class TestDeepcyc():
         df1 = gpd.GeoDataFrame.from_features(ret1)
         df2 = gpd.GeoDataFrame.from_features(ret2)
 
+        assert len(df2) < len(df1)
         assert set(df2.event_id).issubset(set(df1.event_id))
 
     @pytest.mark.parametrize("lats,lons", [
-        ([28.556358, 28.556358], [-88.770067, -87.070986])
+        ([28.5, 28.5], [-88.5, -88.0])
     ])
     def test_tctrack_line(self, lats, lons):
         ret = self.dc.tctrack_events(lats, lons, 'line')
         df = gpd.GeoDataFrame.from_features(ret)
-        assert len(df) > 12000
+        assert len(df) > 3500
 
     @pytest.mark.parametrize("lats,lons", [
-        ([29, 30, 30], [-90, -90, -91])
+        ([29, 29.5, 29.5], [-90, -90, -90.5])
     ])
     def test_tctrack_multiline(self, lats, lons):
         ret = self.dc.tctrack_events(lats, lons, 'line')
         df = gpd.GeoDataFrame.from_features(ret)
-        assert len(df) > 12000
+        assert len(df) > 6500
 
     @pytest.mark.parametrize("lats,lons", [
         ([29, 30, 30, 29, 29], [-91, -91, -90, -90, -91])
     ])
     def test_tctrack_polygon(self, lats, lons):
-        ret = self.dc.tctrack_events(lats, lons, 'polygon')
+        return_periods = [100, 200]
+        ret = self.dc.tctrack_returnvalues(lats, lons, return_periods, 'polygon')
         df = gpd.GeoDataFrame.from_features(ret)
-        assert len(df) > 14000
+
+        assert len(df.wind_speed) == len(return_periods)
 
     @pytest.mark.parametrize("lats,lons", [
         ([29, 30, 30], [-90, -90, -91])
