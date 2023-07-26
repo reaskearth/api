@@ -54,6 +54,34 @@ class TestDeepcyc():
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert len(df) == len(lats)
+
+    @pytest.mark.parametrize("scenario,time_horizon", [
+        ('SSP1-2.6', 2035),
+        ('SSP2-4.5', 2035),
+        ('SSP5-8.5', 2035),
+        ('SSP1-2.6', 2050),
+        ('SSP2-4.5', 2050),
+        ('SSP5-8.5', 2050),
+    ])
+    def test_tcwind_future_climate(self, scenario, time_horizon):
+
+        lats, lons = generate_random_points(25, 30, -84, -80, 1)
+        lats.extend([25.15, 25.15])
+        lons.extend([-80.735, -80.725])
+        return_periods = [100]
+
+        ret1 = self.dc.tcwind_returnvalues(lats, lons, return_periods,
+                                             scenario='current_climate', time_horizon='now')
+        assert ret1['header']['simulation_years'] == 41000
+        df_now = gpd.GeoDataFrame.from_features(ret1)
+
+        ret2 = self.dc.tcwind_returnvalues(lats, lons, return_periods,
+                                            scenario=scenario, time_horizon=time_horizon)
+        assert ret2['header']['simulation_years'] == 25000
+        df_future = gpd.GeoDataFrame.from_features(ret2)
+
+        assert (df_now.wind_speed < df_future.wind_speed).all()
+
  
     @pytest.mark.parametrize("min_lat,max_lat,min_lon,max_lon,n_points,return_periods", [
         (25.0,30.0,-84.0,-80.0, 10, [10,20,100,250,500]) #Florida
@@ -210,6 +238,7 @@ class TestDeepcyc():
         df.iloc[0].wind_speed == 119
         df.iloc[0].return_period < 10
 
+    @pytest.mark.skip(reason='FIXME: update github secrets to contain limited permission test user')
     @pytest.mark.parametrize("lats,lons", [
         ([-20.5, -20.3, -20.3536], [148.5, 149.5, 148.9573]),
     ])
@@ -231,6 +260,7 @@ class TestDeepcyc():
 
         assert ret1['features'] == ret2['features']
 
+    @pytest.mark.skip(reason='FIXME: update github secrets to contain limited permission test user')
     @pytest.mark.parametrize("lats,lons", [
         ([28.556358, 28.556358], [-88.770067, -87.070986])
     ])

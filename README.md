@@ -11,7 +11,7 @@ The Reask API currently supports two products:
 ### API Versions
 
  * [v1](https://github.com/reaskearth/api/tree/v1)
- * [v2](https://github.com/reaskearth/api/tree/main)
+ * [v2](https://github.com/reaskearth/api/tree/main) (this page)
 
 
 ## Package Status

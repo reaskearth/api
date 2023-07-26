@@ -61,6 +61,7 @@ class TestMetryc():
 
         assert len(df) > 30
 
+    @pytest.mark.skip(reason='FIXME: update github secrets to contain limited permission test user')
     @pytest.mark.parametrize("lats,lons", [
         ([29.95747], [-90.06295])
     ])
