@@ -65,7 +65,7 @@ class TestDeepcyc():
     ])
     def test_tcwind_future_climate(self, scenario, time_horizon):
 
-        lats, lons = generate_random_points(25, 30, -84, -80, 1)
+        lats, lons = generate_random_points(27.5, 28.5, -85, -80, 1)
         lats.extend([25.15, 25.15])
         lons.extend([-80.735, -80.725])
         return_periods = [100]
@@ -82,7 +82,30 @@ class TestDeepcyc():
 
         assert (df_now.wind_speed < df_future.wind_speed).all()
 
- 
+
+    @pytest.mark.parametrize("num_points", [
+        (1000),
+    ])
+    def test_tcwind_many_points(self, num_points):
+
+        lats, lons = generate_random_points(27.5, 33, -100, -80, num_points)
+        return_periods = [10, 25, 50, 100, 250, 500, 750]
+
+        ret1 = self.dc.tcwind_returnvalues(lats, lons, return_periods,
+                                            scenario='current_climate', time_horizon='now')
+        df1 = gpd.GeoDataFrame.from_features(ret1)
+        df1.sort_values(by=['cell_id', 'return_period'], inplace=True)
+        assert len(df1) == len(return_periods) * num_points
+
+        ret2 = self.dc.tcwind_returnvalues(lats, lons, return_periods,
+                                            scenario='current_climate', time_horizon='now')
+        df2 = gpd.GeoDataFrame.from_features(ret2)
+        df2.sort_values(by=['cell_id', 'return_period'], inplace=True)
+        assert len(df1) == len(return_periods) * num_points
+
+        assert list(df1.wind_speed) == list(df2.wind_speed)
+
+
     @pytest.mark.parametrize("min_lat,max_lat,min_lon,max_lon,n_points,return_periods", [
         (25.0,30.0,-84.0,-80.0, 10, [10,20,100,250,500]) #Florida
     ])
