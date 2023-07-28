@@ -187,7 +187,6 @@ class TestDeepcyc():
 
         assert round(calculated_rp) == round(api_rp)
 
-
     @pytest.mark.parametrize("lat,lon", [
         (27.7221, -82.7386)
     ])
@@ -217,6 +216,8 @@ class TestDeepcyc():
         df1 = gpd.GeoDataFrame.from_features(ret1)
         df2 = gpd.GeoDataFrame.from_features(ret2)
 
+        assert len(set(df2.event_id)) == len(df2.event_id)
+        assert len(set(df1.event_id)) == len(df1.event_id)
         assert len(df2) < len(df1)
         assert set(df2.event_id).issubset(set(df1.event_id))
 
