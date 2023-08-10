@@ -36,9 +36,6 @@ def get_cat_in_circle(center_lat, center_lon, radius_km, terrain_correction,
     df['lon'] = df.geometry.centroid.x
     df.drop(['geometry'], axis=1, inplace=True)
 
-    import pdb
-    pdb.set_trace()
-
     return df
 
 

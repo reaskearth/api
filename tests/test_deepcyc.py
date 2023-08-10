@@ -5,6 +5,7 @@ import random
 import sys
 import json
 import shapely
+import time
 from pyproj import Transformer
 
 from pathlib import Path
@@ -34,16 +35,17 @@ class TestDeepcyc():
     dc = DeepCyc()
 
     @pytest.mark.parametrize("lat,lon", [
-        # CONUS, Australia
-        ([31.6938, -20.35685],
-         [-85.1774, 148.95112])
+        # CONUS, Australia, Hong Kong
+        (31.6938, -85.1774),
+        (-20.35685, 148.95112),
+        #(22.25, 114.20)
     ])
     def test_tcwind_events(self, lat, lon):
         ret = self.dc.tcwind_events(lat, lon)
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert ret['header']['message'] is None
-        assert len(lat) == len(set(df.cell_id))
+        assert len(set(df.cell_id)) == 1
 
     @pytest.mark.parametrize("lats,lons", [
         ([31.6938, 31.7359, 31.42, 31.532, 31.7, 31.5, 31.4, 31.1, 31.2, 31.3],
@@ -148,14 +150,16 @@ class TestDeepcyc():
             assert df_gust.iloc[0].wind_speed > df_sus.iloc[0].wind_speed
 
     @pytest.mark.parametrize("wind_speed_units", ['kph', 'mph', 'kts', 'ms'])
-    def test_tcwind_units(self, wind_speed_units):
+    def test_units(self, wind_speed_units):
         lats, lons = generate_random_points(25, 30, -85, -80, 1)
 
         ret_kph = self.dc.tcwind_returnvalues(lats, lons, 100)
         ws_kph = ret_kph['features'][0]['properties']['wind_speed']
+        assert ret_kph['header']['wind_speed_units'] == 'kph'
 
         ret = self.dc.tcwind_returnvalues(lats, lons, 100, wind_speed_units=wind_speed_units)
         ws_other = ret['features'][0]['properties']['wind_speed']
+        assert ret['header']['wind_speed_units'] == wind_speed_units
 
         if wind_speed_units == 'kph':
             multiplier = 1
@@ -167,6 +171,17 @@ class TestDeepcyc():
             multiplier = 3.6
 
         assert ws_kph == round(ws_other*multiplier)
+
+        ret_kph = self.dc.tctrack_returnvalues(lats[0], lons[0], 100, 'circle', radius_km=50)
+        ws_kph = ret_kph['features'][0]['properties']['wind_speed']
+        assert ret_kph['header']['wind_speed_units'] == 'kph'
+
+        ret = self.dc.tctrack_returnvalues(lats[0], lons[0], 100, 'circle', radius_km=50, wind_speed_units=wind_speed_units)
+        ws_other = ret['features'][0]['properties']['wind_speed']
+        assert ret['header']['wind_speed_units'] == wind_speed_units
+
+        assert ws_kph == round(ws_other*multiplier)
+
 
     def test_tcwind_calc_rp(self):
         """
@@ -188,7 +203,17 @@ class TestDeepcyc():
         assert round(calculated_rp) == round(api_rp)
 
     @pytest.mark.parametrize("lat,lon", [
-        (27.7221, -82.7386)
+        (34.076463, -84.652037), 
+    ])
+    def test_tctrack_big_circle(self, lat, lon):
+        ret = self.dc.tctrack_events(lat, lon, 'circle', radius_km=200)
+        df = gpd.GeoDataFrame.from_features(ret)
+        assert len(df) > 27000
+
+
+    @pytest.mark.parametrize("lat,lon", [
+        (27.7221, -82.7386), 
+        #(22.25, 114.20) # Hong Kong
     ])
     def test_tctrack_circle(self, lat, lon):
 
@@ -222,12 +247,14 @@ class TestDeepcyc():
         assert set(df2.event_id).issubset(set(df1.event_id))
 
     @pytest.mark.parametrize("lats,lons", [
-        ([28.5, 28.5], [-88.5, -88.25])
+        ([28.5, 28.5], [-88.5, -88.25]), # Gulf
+        #([22.15, 22.15], [114.0, 114.25]) # Hong Kong
     ])
     def test_tctrack_line(self, lats, lons):
         ret = self.dc.tctrack_events(lats, lons, 'line')
         df = gpd.GeoDataFrame.from_features(ret)
-        assert len(df) > 1500
+
+        assert len(df) > 1800
 
     @pytest.mark.parametrize("lats,lons", [
         ([29, 29.25, 29.25], [-90, -90, -90.25])
