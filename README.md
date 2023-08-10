@@ -52,7 +52,9 @@ git clone https://github.com/reaskearth/api.git reaskapi
 Once downloaded you can test the code by running one of the tools in the `tools` folder. For example the `get_hazard_csv.py` script:
 ```Bash
 # Change the current directory to the tools folder
-cd reaskapi 
+cd reaskapi
+python3 -m venv venv
+. venv/bin/activate
 pip install -r requirements.txt
 cd tools
 
@@ -63,7 +65,7 @@ echo "28.999,-81.001" >> locations.csv
 echo "27.7221,-82.7386" >> locations.csv
 
 # Run the command line utility
-python3 get_hazard_csv.py --return_period 100 --location_csv locations.csv  --output_filename DeepCyc_RP_100yr.csv --product DeepCyc
+python3 get_tcwind_csv.py --return_period 100 --location_csv locations.csv  --output_filename DeepCyc_RP_100yr.csv --product DeepCyc
 ```
 
 After a succesfull execution of `get_hazard_csv.py` utility you can check the results stored in the output file with the following command:
