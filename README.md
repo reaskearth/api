@@ -29,7 +29,7 @@ Example code for all endpoints can be found in the `tests` directory.
 
 ## Quickstart
 
-Put your Reask credentials into a file called `.reask` in your home directory using the following format:
+Put your Reask credentials into a file called `.reask` in your HOME directory using the following format:
 
 ```
 [default]
