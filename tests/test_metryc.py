@@ -3,6 +3,8 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 import pytest
+import shapely
+import json
 import sys
 
 from pathlib import Path
@@ -73,10 +75,23 @@ class TestMetryc():
         Test Metryc endpoint to guery by geometry
         """
 
-        # Plot the circle. 
-
         ret = self.mc.tctrack_events(lats, lons, geometry, radius_km=radius_km)
         df = gpd.GeoDataFrame.from_features(ret)
+
+        assert 'query_geometry' in ret['header']
+        geom = shapely.from_geojson(json.dumps(ret['header']['query_geometry']))
+
+        if geometry == 'circle':
+            lons, lats = geom.exterior.coords.xy
+            diameter = (np.max(lons) - np.min(lons)) * np.cos(np.deg2rad(np.mean(lats)))*111
+            assert (1 - (diameter / (2*radius_km))) < 0.01
+        elif geometry == 'line':
+            query_lons = shapely.get_coordinates(geom)[:, 0]
+            query_lats = shapely.get_coordinates(geom)[:, 1]
+
+            # FIXME: check this properly
+            assert set(lats) == set(query_lats)
+            assert set(lons) == set(query_lons)
 
         assert len(df) > 30
     
