@@ -12,6 +12,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from reaskapi.metryc import Metryc
 
+
 class TestMetryc():
     mc = Metryc()
 
@@ -31,6 +32,54 @@ class TestMetryc():
         assert name in list(df.name)
 
 
+    @pytest.mark.parametrize("lats,lons,expected_storm_count", [
+        ([30.01], [-90.01], 45), # Gulf of Mexico
+        ([25.0], [-81.0], 51), # Florida South
+        ([32.5], [-80.0], 42), # Carolinas
+        ([21.0], [-88.0], 16), # Yucatan
+    ])
+    def test_tcwind_coverage(self, lats, lons, expected_storm_count):
+        ret = self.mc.tcwind_events(lats, lons)
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) == expected_storm_count
+
+
+    @pytest.mark.parametrize("lats,lons,name,year,ft_gust,ow_1min,ot_1min", [
+        #([13.5], [123.5], 'Rammasun', 2014, ),  
+        #([13.5], [123.5], 'Angela', 1995),  
+        ([30.415], [-89.222], 'Katrina', 2005, 170, 165, 147),  
+    ])
+    def test_tcwind_values(self, lats, lons, name, year, ft_gust, ow_1min, ot_1min):
+        """
+        Test Phillipines wind footprints
+        """
+
+        ret = self.mc.tcwind_events(lats, lons)
+        assert ret['header']['terrain_correction'] == 'full_terrain_gust'
+        assert ret['header']['wind_speed_averaging_period'] == '3_seconds'
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        ft = df[(df.name == name) & (df.year == year)].iloc[0].wind_speed 
+        assert round(ft) == ft_gust
+
+        ret = self.mc.tcwind_events(lats, lons, terrain_correction='open_water', wind_speed_averaging_period='1_minute')
+        assert ret['header']['terrain_correction'] == 'open_water'
+        assert ret['header']['wind_speed_averaging_period'] == '1_minute'
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        ow = df[(df.name == name) & (df.year == year)].iloc[0].wind_speed 
+        assert round(ow) == ow_1min
+
+        ret = self.mc.tcwind_events(lats, lons, terrain_correction='open_terrain', wind_speed_averaging_period='1_minute')
+        assert ret['header']['terrain_correction'] == 'open_terrain'
+        assert ret['header']['wind_speed_averaging_period'] == '1_minute'
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        ot = df[(df.name == name) & (df.year == year)].iloc[0].wind_speed 
+        assert round(ot) == ot_1min
+
+
     def test_emily_1987(self):
         """
         Test windspeeds for Emily 1987
@@ -47,6 +96,7 @@ class TestMetryc():
 
         expected_ws = [210, 181, 207, 181, 180, 179, 178, 213, 211, 210, 208, 192, 199, 189]
         assert list(df[(df.name == 'Emily') & (df.year == 1987)].wind_speed) == expected_ws
+
 
     @pytest.mark.parametrize("width_and_height,lower_lat,left_lon", [
         (10, 27.5, -83),
@@ -94,7 +144,7 @@ class TestMetryc():
             assert set(lons) == set(query_lons)
 
         assert len(df) > 30
-    
+
 
     @pytest.mark.skip(reason='FIXME: update github secrets to contain limited permission test user')
     @pytest.mark.parametrize("lats,lons", [
@@ -108,12 +158,3 @@ class TestMetryc():
             assert False, 'Should not get here'
         except Exception as e:
             assert '403' in str(e)
-
-
-    @pytest.mark.parametrize("lats,lons", [
-        ([29.95747], [-90.06295])
-    ])
-    def test_compare_v1_v2(self, lats, lons):
-        pass
-
-

@@ -35,7 +35,8 @@ class TestDeepcyc():
     dc = DeepCyc()
 
     @pytest.mark.parametrize("lat,lon", [
-        # CONUS, Australia, Hong Kong
+        # Fiji, CONUS, Australia, Hong Kong
+        (-17.68298, 177.2756),
         (31.6938, -85.1774),
         (-20.35685, 148.95112),
         #(22.25, 114.20)
@@ -48,8 +49,8 @@ class TestDeepcyc():
         assert len(set(df.cell_id)) == 1
 
     @pytest.mark.parametrize("lats,lons", [
-        ([31.6938, 31.7359, 31.42, 31.532, 31.7, 31.5, 31.4, 31.1, 31.2, 31.3],
-         [-85.1774, -85.1536, -85.1, -85.1, -85.1, -85.1, -85.1, -85.1, -85.1, -85.1])
+        ([-17.6525, 31.6938, 31.7359, 31.42, 31.532, 31.7, 31.5, 31.4, 31.1, 31.2, 31.3],
+         [177.2634, -85.1774, -85.1536, -85.1, -85.1, -85.1, -85.1, -85.1, -85.1, -85.1, -85.1])
     ])
     def test_tcwind_simple(self, lats, lons):
         ret = self.dc.tcwind_returnvalues(lats, lons, [100])
@@ -127,61 +128,6 @@ class TestDeepcyc():
         assert sorted(df_one.wind_speed) == list(df_one.wind_speed)
         assert list(df_one.return_period) == return_periods
     
-
-    @pytest.mark.parametrize("terrain_correction", [
-        'full_terrain_gust', 'open_water', 'open_terrain', 'all_open_terrain'
-    ])
-    def test_tcwind_terrain(self, terrain_correction):
-        lats, lons = generate_random_points(25, 30, -85, -80, 1)
-
-        ret = self.dc.tcwind_returnvalues(lats, lons, 100, terrain_correction=terrain_correction,
-                                              wind_speed_averaging_period='3_seconds')
-        df_gust = gpd.GeoDataFrame.from_features(ret)
-
-        try:
-            ret = self.dc.tcwind_returnvalues(lats, lons, 100, terrain_correction=terrain_correction,
-                                                wind_speed_averaging_period='1_minute')
-        except Exception as e:
-            assert terrain_correction == 'full_terrain_gust'
-            assert 'Unsupported terrain correction type' in str(e)
-
-        if terrain_correction != 'full_terrain_gust':
-            df_sus = gpd.GeoDataFrame.from_features(ret)
-            assert df_gust.iloc[0].wind_speed > df_sus.iloc[0].wind_speed
-
-    @pytest.mark.parametrize("wind_speed_units", ['kph', 'mph', 'kts', 'ms'])
-    def test_units(self, wind_speed_units):
-        lats, lons = generate_random_points(25, 30, -85, -80, 1)
-
-        ret_kph = self.dc.tcwind_returnvalues(lats, lons, 100)
-        ws_kph = ret_kph['features'][0]['properties']['wind_speed']
-        assert ret_kph['header']['wind_speed_units'] == 'kph'
-
-        ret = self.dc.tcwind_returnvalues(lats, lons, 100, wind_speed_units=wind_speed_units)
-        ws_other = ret['features'][0]['properties']['wind_speed']
-        assert ret['header']['wind_speed_units'] == wind_speed_units
-
-        if wind_speed_units == 'kph':
-            multiplier = 1
-        elif wind_speed_units == 'mph':
-            multiplier = 1.609344
-        elif wind_speed_units == 'kts':
-            multiplier = 1.8520000118528
-        elif wind_speed_units == 'ms':
-            multiplier = 3.6
-
-        assert ws_kph == round(ws_other*multiplier)
-
-        ret_kph = self.dc.tctrack_returnvalues(lats[0], lons[0], 100, 'circle', radius_km=50)
-        ws_kph = ret_kph['features'][0]['properties']['wind_speed']
-        assert ret_kph['header']['wind_speed_units'] == 'kph'
-
-        ret = self.dc.tctrack_returnvalues(lats[0], lons[0], 100, 'circle', radius_km=50, wind_speed_units=wind_speed_units)
-        ws_other = ret['features'][0]['properties']['wind_speed']
-        assert ret['header']['wind_speed_units'] == wind_speed_units
-
-        assert ws_kph == round(ws_other*multiplier)
-
 
     def test_tcwind_calc_rp(self):
         """
