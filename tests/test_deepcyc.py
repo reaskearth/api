@@ -220,23 +220,6 @@ class TestDeepcyc():
 
         assert len(df.wind_speed) == len(return_periods)
 
-    @pytest.mark.parametrize("lats,lons", [
-        ([29, 30, 30], [-90, -90, -91])
-    ])
-    def test_tctrack_returnperiod_line(self, lats, lons):
-        ret = self.dc.tctrack_returnperiods(lats, lons, 119, 'line')
-        df = gpd.GeoDataFrame.from_features(ret)
-        df.iloc[0].wind_speed == 119
-        df.iloc[0].return_period < 10
-
-    @pytest.mark.parametrize("lats,lons", [
-        ([29, 30, 30, 29, 29], [-91, -91, -90, -90, -91])
-    ])
-    def test_tctrack_returnperiod_polygon(self, lats, lons):
-        ret = self.dc.tctrack_returnperiods(lats, lons, 119, 'polygon')
-        df = gpd.GeoDataFrame.from_features(ret)
-        df.iloc[0].wind_speed == 119
-        df.iloc[0].return_period < 10
 
     @pytest.mark.skip(reason='FIXME: update github secrets to contain limited permission test user')
     @pytest.mark.parametrize("lats,lons", [

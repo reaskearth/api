@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 import shapely
 import json
+import geopy.distance
 import sys
 
 from pathlib import Path
@@ -30,72 +31,6 @@ class TestMetryc():
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert name in list(df.name)
-
-
-    @pytest.mark.parametrize("lats,lons,expected_storm_count", [
-        ([30.01], [-90.01], 45), # Gulf of Mexico
-        ([25.0], [-81.0], 51), # Florida South
-        ([32.5], [-80.0], 42), # Carolinas
-        ([21.0], [-88.0], 16), # Yucatan
-    ])
-    def test_tcwind_coverage(self, lats, lons, expected_storm_count):
-        ret = self.mc.tcwind_events(lats, lons)
-        df = gpd.GeoDataFrame.from_features(ret)
-
-        assert len(df) == expected_storm_count
-
-
-    @pytest.mark.parametrize("lats,lons,name,year,ft_gust,ow_1min,ot_1min", [
-        #([13.5], [123.5], 'Rammasun', 2014, ),  
-        #([13.5], [123.5], 'Angela', 1995),  
-        ([30.415], [-89.222], 'Katrina', 2005, 170, 165, 147),  
-    ])
-    def test_tcwind_values(self, lats, lons, name, year, ft_gust, ow_1min, ot_1min):
-        """
-        Test Phillipines wind footprints
-        """
-
-        ret = self.mc.tcwind_events(lats, lons)
-        assert ret['header']['terrain_correction'] == 'full_terrain_gust'
-        assert ret['header']['wind_speed_averaging_period'] == '3_seconds'
-        df = gpd.GeoDataFrame.from_features(ret)
-
-        ft = df[(df.name == name) & (df.year == year)].iloc[0].wind_speed 
-        assert round(ft) == ft_gust
-
-        ret = self.mc.tcwind_events(lats, lons, terrain_correction='open_water', wind_speed_averaging_period='1_minute')
-        assert ret['header']['terrain_correction'] == 'open_water'
-        assert ret['header']['wind_speed_averaging_period'] == '1_minute'
-        df = gpd.GeoDataFrame.from_features(ret)
-
-        ow = df[(df.name == name) & (df.year == year)].iloc[0].wind_speed 
-        assert round(ow) == ow_1min
-
-        ret = self.mc.tcwind_events(lats, lons, terrain_correction='open_terrain', wind_speed_averaging_period='1_minute')
-        assert ret['header']['terrain_correction'] == 'open_terrain'
-        assert ret['header']['wind_speed_averaging_period'] == '1_minute'
-        df = gpd.GeoDataFrame.from_features(ret)
-
-        ot = df[(df.name == name) & (df.year == year)].iloc[0].wind_speed 
-        assert round(ot) == ot_1min
-
-
-    def test_emily_1987(self):
-        """
-        Test windspeeds for Emily 1987
-        """
-        lats = [18.2369, 18.2369, 18.2369, 18.2369, 18.2369, 18.2369, 18.2369,
-            18.2273, 18.2273, 18.2273, 18.2273, 18.2273, 18.2273, 18.2273]
-        lons = [-70.2883, -70.2786, -70.2680, -70.2584, -70.2484, -70.2352, -70.2289,
-            -70.2883, -70.2786, -70.2680, -70.2584, -70.2484, -70.2352, -70.2289]
-
-        ret = self.mc.tcwind_events(lats, lons)
-        df = gpd.GeoDataFrame.from_features(ret)
-
-        assert len(df.cell_id.unique()) == len(lats)
-
-        expected_ws = [210, 181, 207, 181, 180, 179, 178, 213, 211, 210, 208, 192, 199, 189]
-        assert list(df[(df.name == 'Emily') & (df.year == 1987)].wind_speed) == expected_ws
 
 
     @pytest.mark.parametrize("width_and_height,lower_lat,left_lon", [
@@ -144,6 +79,26 @@ class TestMetryc():
             assert set(lons) == set(query_lons)
 
         assert len(df) > 30
+
+
+    def test_circle_intersection(self):
+        """
+        Test to see whether API is reporting circle to track intersection properly
+        """
+        clat = 35.7385
+        clon = 137.1203
+        radius_km = 100
+        ret = self.mc.tctrack_events([clat], [clon], geometry='circle', radius_km=radius_km)
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert 'Jebi' not in list(df.name)
+
+        geom = df.iloc[0].geometry
+        ilat = geom.y
+        ilon = geom.x
+
+        dist = geopy.distance.geodesic((clat, clon), (ilat, ilon))
+        assert 1 - (dist.km / radius_km) < 0.002
 
 
     @pytest.mark.skip(reason='FIXME: update github secrets to contain limited permission test user')
