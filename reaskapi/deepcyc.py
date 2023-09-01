@@ -1,6 +1,5 @@
 
 import time
-import requests
 from reaskapi.api_client import ApiClient
 
 class DeepCyc(ApiClient):
