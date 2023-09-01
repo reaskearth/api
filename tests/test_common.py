@@ -24,7 +24,8 @@ class TestCommon:
     dc = DeepCyc()
 
     @pytest.mark.parametrize("lats,lons", [
-        ([29.95747], [-90.06295]), # Gulf of Mexico
+        ([36.8], [-76]), # Virginia Beach
+        #([29.95747], [-90.06295]), # Gulf of Mexico
         #([12.0], [125.0]) # Phillipines 
     ])
     @pytest.mark.parametrize("prod", [mc, dc])
