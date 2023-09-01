@@ -84,7 +84,8 @@ class TestCommon:
 
     @pytest.mark.parametrize("prod", [mc, dc])
     @pytest.mark.parametrize("lats,lons", [
-        ([29.95747], [-90.06295]) # Gulf of Mexico
+        ([36.8], [-76]), # Virginia Beach
+        #([29.95747], [-90.06295]) # Gulf of Mexico
     ])
     @pytest.mark.parametrize("wind_speed_units", ['kph', 'mph', 'kts', 'ms'])
     def test_units(self, prod, lats, lons, wind_speed_units):
