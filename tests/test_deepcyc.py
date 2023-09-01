@@ -156,7 +156,6 @@ class TestDeepcyc():
         df = gpd.GeoDataFrame.from_features(ret)
         assert len(df) > 27000
 
-
     @pytest.mark.parametrize("lat,lon", [
         (27.7221, -82.7386), 
         #(22.25, 114.20) # Hong Kong
