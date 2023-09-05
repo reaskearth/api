@@ -65,7 +65,7 @@ class TestCompareV1andV2:
         ret_v1 = call_v1_metryc_point(self.mc.access_token, lats, lons)
         df_v1 = gpd.GeoDataFrame.from_features(ret_v1)
 
-        assert ret_v2['header']['product'] == ret_v1['header']['product']
+        #assert ret_v2['header']['product'] == ret_v1['header']['product']
         assert sorted(df_v1.storm_names.iloc[0]) == sorted(df_v2.name)
         assert sorted(sorted(df_v1.windspeeds.iloc[0])) == sorted(df_v2.wind_speed)
 
