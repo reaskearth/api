@@ -158,6 +158,7 @@ class TestDeepcyc():
 
     @pytest.mark.parametrize("lat,lon", [
         (27.7221, -82.7386), 
+        (29.09915, -95.02722), 
         #(22.25, 114.20) # Hong Kong
     ])
     def test_tctrack_circle(self, lat, lon):
@@ -190,6 +191,7 @@ class TestDeepcyc():
         assert len(set(df1.event_id)) == len(df1.event_id)
         assert len(df2) < len(df1)
         assert set(df2.event_id).issubset(set(df1.event_id))
+
 
     @pytest.mark.parametrize("lats,lons", [
         ([28.5, 28.5], [-88.5, -88.25]), # Gulf
