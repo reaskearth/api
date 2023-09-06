@@ -91,9 +91,7 @@ class TestMetryc():
         ret = self.mc.tctrack_events([clat], [clon], geometry='circle', radius_km=radius_km)
         df = gpd.GeoDataFrame.from_features(ret)
 
-        # FIXME: enable this when we calculate intersections using an equal area projection
-        # See MA-38, MA-39, API-39
-        #assert 'Jebi' not in list(df.name)
+        assert 'Jebi' not in list(df.name)
 
         geom = df.iloc[0].geometry
         ilat = geom.y
