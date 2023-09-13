@@ -60,6 +60,9 @@ class TestRiskScores:
         assert df.wind_risk_score.iloc[0] < 5 and df.wind_risk_score.iloc[0] > 0.1
         assert len(set(df.cell_id)) == 1
 
+        cat_rs = df.ts_wind_risk_score + df.cat1_wind_risk_score + df.cat2_wind_risk_score + \
+                     df.cat3_wind_risk_score + df.cat4_wind_risk_score + df.cat5_wind_risk_score
+        assert abs(1 - (cat_rs.item() / df.wind_risk_score.item())) < 1e-6
 
     def test_normalized_risk_scores(self):
 

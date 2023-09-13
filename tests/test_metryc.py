@@ -85,20 +85,25 @@ class TestMetryc():
         """
         Test to see whether API is reporting circle to track intersection properly
         """
-        clat = 35.7385
-        clon = 137.1203
-        radius_km = 100
+
+        radius_km = 10
+
+        track_point = geopy.Point(30.27, -89.60)
+        clat, clon, _ = geopy.distance.distance(radius_km).destination(track_point, 90)
+
+        clat = 30.27
+        clon = -89.70
         ret = self.mc.tctrack_events([clat], [clon], geometry='circle', radius_km=radius_km)
         df = gpd.GeoDataFrame.from_features(ret)
 
-        assert 'Jebi' not in list(df.name)
+        assert 'Katrina' in list(df.name)
 
         geom = df.iloc[0].geometry
         ilat = geom.y
         ilon = geom.x
 
         dist = geopy.distance.geodesic((clat, clon), (ilat, ilon))
-        assert 1 - (dist.km / radius_km) < 0.002
+        assert abs(1 - (dist.km / radius_km)) < 1e-4
 
 
     @pytest.mark.skip(reason='FIXME: update github secrets to contain limited permission test user')
