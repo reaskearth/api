@@ -35,11 +35,8 @@ class TestDeepcyc():
     dc = DeepCyc()
 
     @pytest.mark.parametrize("lat,lon", [
-        # Fiji, CONUS, Australia, Hong Kong
-        (-17.68298, 177.2756),
-        (31.6938, -85.1774),
-        (-20.35685, 148.95112),
-        #(22.25, 114.20)
+        # CONUS
+        (31.6938, -85.1774)
     ])
     def test_tcwind_events(self, lat, lon):
         ret = self.dc.tcwind_events(lat, lon)
@@ -47,6 +44,23 @@ class TestDeepcyc():
 
         assert ret['header']['message'] is None
         assert len(set(df.cell_id)) == 1
+
+
+    @pytest.mark.parametrize("lat,lon", [
+        # Fiji, CONUS, Australia, Hong Kong
+        (-17.68298, 177.2756),
+        (31.6938, -85.1774),
+        (-20.35685, 148.95112),
+        (14.0, 121),
+        #(22.25, 114.20)
+    ])
+    def test_tcwind_locations(self, lat, lon):
+        ret = self.dc.tcwind_returnvalues(lat, lon, [100])
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert ret['header']['message'] is None
+        assert len(set(df.cell_id)) == 1
+
 
     @pytest.mark.parametrize("lats,lons", [
         ([-17.6525, 31.6938, 31.7359, 31.42, 31.532, 31.7, 31.5, 31.4, 31.1, 31.2, 31.3],
