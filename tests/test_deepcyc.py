@@ -47,12 +47,12 @@ class TestDeepcyc():
 
 
     @pytest.mark.parametrize("lat,lon", [
-        # Fiji, CONUS, Australia, Hong Kong
-        (-17.68298, 177.2756),
-        (31.6938, -85.1774),
-        (-20.35685, 148.95112),
-        (14.0, 121),
-        #(22.25, 114.20)
+        (-17.68298, 177.2756),  # Fiji
+        (31.6938, -85.1774),    # CONUS
+        (-20.35685, 148.95112), # Australia
+        (14.0, 121),            # Philippines
+        #(22.25, 114.20)        # Hong Kong
+        (-35.5, 174)            # New Zealand 
     ])
     def test_tcwind_locations(self, lat, lon):
         ret = self.dc.tcwind_returnvalues(lat, lon, [100])
