@@ -21,15 +21,6 @@ class ApiClient:
         self.headers = {'Content-Type':'application/json',
              'Authorization': f'Bearer {self.access_token}'}
 
-    def tcwind_riskscores(self, lat, lon, **kwargs):
-
-        params = kwargs.copy()
-        params['lat'] = lat
-        params['lon'] = lon
-        self.logger.debug(f'Parameters: {params}')
-
-        return self._call_api(params, f'{self.product.lower()}/tcwind/riskscores')
-
     def tcwind_events(self, lat, lon, **kwargs):
 
         params = kwargs.copy()
