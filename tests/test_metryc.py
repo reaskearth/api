@@ -32,6 +32,25 @@ class TestMetryc():
 
         assert name in list(df.name)
 
+    # FIXME: API-50: disable Metryc terrain corrections for now
+    @pytest.mark.parametrize("lats,lons,name", [
+        ([29.95747], [-90.06295], 'Katrina')
+    ])
+    def test_tcwind_terrain_correction(self, lats, lons, name):
+        ret = self.mc.tcwind_events(lats, lons)
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert name in list(df.name)
+
+        for terrain_correction in ['open_water', 'open_terrain']:
+            try:
+                ret = self.mc.tcwind_events(lats, lons, terrain_correction=terrain_correction)
+            except Exception as exc:
+                assert 'Unsupported terrain correction type' in str(exc)
+                continue
+
+            assert False, "Should not reach here."
+
 
     @pytest.mark.parametrize("width_and_height,lower_lat,left_lon", [
         (10, 27.5, -83),
@@ -49,7 +68,7 @@ class TestMetryc():
 
         assert len(set(df.cell_id)) == width_and_height*width_and_height
 
-    
+
     @pytest.mark.parametrize("lats,lons,geometry,radius_km", [
         ([30], [-90], 'circle', 50),
         (30, -90, 'circle', 50),
