@@ -19,7 +19,7 @@ class MockedResponse:
         return {}
 
 
-@pytest.mark.parametrize("config", [None, ClientConfig("https://localhost:8001/v2")])
+@pytest.mark.parametrize("config", [None, ClientConfig("https://localhost:8001")])
 def test_deep_cyc_config(config: ClientConfig):
     with patch("reaskapi.api_client.get_access_token") as token_mock:
         token_mock.return_value = "dummy_token"
@@ -27,7 +27,6 @@ def test_deep_cyc_config(config: ClientConfig):
         requests.Session.send = mock_session_send
         d = DeepCyc(config=config)
         d.tctrack_events(36.8, -76, "circle", radius_km=50, wind_speed_units="kph")
-        print(mock_session_send.call_args.args[0].url)
         mock_session_send.assert_called_once()
         assert (
             mock_session_send.call_args.args[0].url
@@ -35,7 +34,7 @@ def test_deep_cyc_config(config: ClientConfig):
         )
 
 
-@pytest.mark.parametrize("config", [None, ClientConfig("https://localhost:8001/v2")])
+@pytest.mark.parametrize("config", [None, ClientConfig("https://localhost:8001")])
 def test_metryc_config(config: ClientConfig):
     with patch("reaskapi.api_client.get_access_token") as token_mock:
         token_mock.return_value = "dummy_token"
