@@ -41,7 +41,6 @@ def test_metryc_config(config: ClientConfig):
         patch("requests.Session.send") as mock_session_send:
         token_mock.return_value = "dummy_token"
         mock_session_send.return_value=MockedResponse()
-        requests.Session.send = mock_session_send
         m = Metryc(config=config)
         m.tctrack_events(36.8, -76, "circle", radius_km=50, wind_speed_units="kph")
         mock_session_send.assert_called_once()
