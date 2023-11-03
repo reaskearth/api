@@ -43,7 +43,6 @@ def test_metryc_config(config: ClientConfig):
         requests.Session.send = mock_session_send
         m = Metryc(config=config)
         m.tctrack_events(36.8, -76, "circle", radius_km=50, wind_speed_units="kph")
-        print(mock_session_send.call_args.args[0].url)
         mock_session_send.assert_called_once()
         assert (
             mock_session_send.call_args.args[0].url
