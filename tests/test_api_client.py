@@ -21,10 +21,11 @@ class MockedResponse:
 
 @pytest.mark.parametrize("config", [None, ClientConfig("https://localhost:8001")])
 def test_deep_cyc_config(config: ClientConfig):
-    with patch("reaskapi.api_client.get_access_token") as token_mock:
+    with patch("reaskapi.api_client.get_access_token") as token_mock, patch(
+        "requests.Session.send"
+    ) as mock_session_send:
         token_mock.return_value = "dummy_token"
-        mock_session_send = Mock(return_value=MockedResponse())
-        requests.Session.send = mock_session_send
+        mock_session_send.return_value = MockedResponse()
         d = DeepCyc(config=config)
         d.tctrack_events(36.8, -76, "circle", radius_km=50, wind_speed_units="kph")
         mock_session_send.assert_called_once()
@@ -36,9 +37,10 @@ def test_deep_cyc_config(config: ClientConfig):
 
 @pytest.mark.parametrize("config", [None, ClientConfig("https://localhost:8001")])
 def test_metryc_config(config: ClientConfig):
-    with patch("reaskapi.api_client.get_access_token") as token_mock:
+    with patch("reaskapi.api_client.get_access_token") as token_mock, \
+        patch("requests.Session.send") as mock_session_send:
         token_mock.return_value = "dummy_token"
-        mock_session_send = Mock(return_value=MockedResponse())
+        mock_session_send.return_value=MockedResponse()
         requests.Session.send = mock_session_send
         m = Metryc(config=config)
         m.tctrack_events(36.8, -76, "circle", radius_km=50, wind_speed_units="kph")
