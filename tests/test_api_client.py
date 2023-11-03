@@ -29,9 +29,10 @@ def test_deep_cyc_config(config: ClientConfig):
         d = DeepCyc(config=config)
         d.tctrack_events(36.8, -76, "circle", radius_km=50, wind_speed_units="kph")
         mock_session_send.assert_called_once()
-        print(mock_session_send.call_args.args)
+        name, args, kwargs = mock_session_send.mock_calls[0]
+        print(args)
         assert (
-            mock_session_send.call_args.args[0].url
+            args[0].url
             == f"{config.base_url if config is not None else 'https://api.reask.earth/v2'}/deepcyc/tctrack/events?radius_km=50&wind_speed_units=kph&lat=36.8&lon=-76&geometry=circle"
         )
 
@@ -46,8 +47,9 @@ def test_metryc_config(config: ClientConfig):
         m = Metryc(config=config)
         m.tctrack_events(36.8, -76, "circle", radius_km=50, wind_speed_units="kph")
         mock_session_send.assert_called_once()
-        print(mock_session_send.call_args.args[0])
+        name, args, kwargs = mock_session_send.mock_calls[0]
+        print(args)
         assert (
-            mock_session_send.call_args.args[0].url
+            args[0].url
             == f"{config.base_url if config is not None else 'https://api.reask.earth/v2'}/metryc/tctrack/events?radius_km=50&wind_speed_units=kph&lat=36.8&lon=-76&geometry=circle"
         )
