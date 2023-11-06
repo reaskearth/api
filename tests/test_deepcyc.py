@@ -155,7 +155,34 @@ class TestDeepcyc():
         ret = self.dc.tctrack_events(lat, lon, 'circle', radius_km=200)
         df = gpd.GeoDataFrame.from_features(ret)
         assert len(df) > 27000
+    
 
+    @pytest.mark.parametrize("lat,lon", [
+        (27.7221, -82.7386), 
+        (29.09915, -95.02722), 
+    ])
+    def test_tctrack_central_pressure_circle(self, lat, lon):
+
+        radius_km = 10
+        ret_cp = self.dc.tctrack_central_pressure_events(lat, lon, 'circle', radius_km=radius_km)
+        assert ret_cp['header']['wind_speed_units'] is None
+        assert ret_cp['header']['wind_speed_averaging_period'] is None
+
+        df_cp = gpd.GeoDataFrame.from_features(ret_cp)
+        assert(list(df_cp.central_pressure)) == sorted(list(df_cp.central_pressure)), \
+             'Central pressure not sorted'
+
+        ret_vm = self.dc.tctrack_wind_speed_events(lat, lon, 'circle', radius_km=radius_km)
+        df_vm = gpd.GeoDataFrame.from_features(ret_vm)
+
+        assert (df_vm.wind_speed / df_cp.central_pressure).max() < 0.5, \
+             'Unexpected wind - pressure relationship'
+        assert (df_cp.central_pressure.loc[df_vm.wind_speed == 0] > 1000).all(),  \
+             'Central pressure too low for given wind speed'
+
+        assert set(df_vm.event_id) == set(df_cp.event_id), 'Inconsistent event ids'
+
+ 
     @pytest.mark.parametrize("lat,lon", [
         (27.7221, -82.7386), 
         (29.09915, -95.02722), 

@@ -16,7 +16,8 @@ class ApiClient:
         """
         self.access_token = get_access_token(config_section)
         self.product = product
-        self.base_url = 'https://api.reask.earth/v2'
+        #self.base_url = 'https://api.reask.earth/v2'
+        self.base_url = 'http://127.0.0.1:8002'
 
         self.headers = {'Content-Type':'application/json',
              'Authorization': f'Bearer {self.access_token}'}
@@ -49,6 +50,28 @@ class ApiClient:
         self.logger.debug(f'Parameters: {params}')
 
         return self._call_api(params, f'{self.product.lower()}/tctrack/events')
+
+
+    def tctrack_wind_speed_events(self, lat, lon, geometry, **kwargs):
+
+        params = kwargs.copy()
+        params['lat'] = lat
+        params['lon'] = lon
+        params['geometry'] = geometry
+        self.logger.debug(f'Parameters: {params}')
+
+        return self._call_api(params, f'{self.product.lower()}/tctrack/wind_speed/events')
+
+
+    def tctrack_central_pressure_events(self, lat, lon, geometry, **kwargs):
+
+        params = kwargs.copy()
+        params['lat'] = lat
+        params['lon'] = lon
+        params['geometry'] = geometry
+        self.logger.debug(f'Parameters: {params}')
+
+        return self._call_api(params, f'{self.product.lower()}/tctrack/central_pressure/events')
 
 
     def _call_api(self, params, endpoint):
