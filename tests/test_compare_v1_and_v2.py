@@ -54,6 +54,14 @@ class TestCompareV1andV2:
     mc = Metryc()
     dc = DeepCyc()
 
+    @pytest.mark.parametrize("lats,lons", [
+        ([29.95747], [-90.06295])
+    ])
+    def test_metryc_v1_simple(self, lats, lons):
+
+        ret_v1 = call_v1_metryc_point(self.mc.access_token, lats, lons)
+        assert len(ret_v1['features'][0]['properties']['storm_names']) > 40
+
 
     @pytest.mark.parametrize("lats,lons", [
         ([29.95747], [-90.06295])

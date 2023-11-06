@@ -13,12 +13,12 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from reaskapi.deepcyc import DeepCyc
 
-def generate_random_points(min_lat, max_lat, min_lon, max_lon, n_points):
+def generate_random_points(min_lat, min_lon, max_lat=None, max_lon=None, n_points=1):
 
-    # min_lat = 25.0
-    # max_lat = 30.0
-    # min_lon = -84.0
-    # max_lon = -80.0
+    if max_lat is None:
+        max_lat = min_lat + 0.5
+    if max_lon is None:
+        max_lon = min_lon + 0.5
 
     lats = []
     lons = []
@@ -35,11 +35,11 @@ class TestDeepcyc():
     dc = DeepCyc()
 
     @pytest.mark.parametrize("lat,lon", [
-        # Fiji, CONUS, Australia, Hong Kong
-        (-17.68298, 177.2756),
-        (31.6938, -85.1774),
-        (-20.35685, 148.95112),
-        #(22.25, 114.20)
+        (19.71538, -155.544),  # Hawaii
+        (-17.68298, 177.2756), # Fiji
+        (31.6938, -85.1774),   # CONUS
+        (-20.35685, 148.9511), # Australia
+        (22.25, 114.20)        # Hong Kong
     ])
     def test_tcwind_events(self, lat, lon):
         ret = self.dc.tcwind_events(lat, lon)
@@ -47,6 +47,23 @@ class TestDeepcyc():
 
         assert ret['header']['message'] is None
         assert len(set(df.cell_id)) == 1
+
+
+    @pytest.mark.parametrize("lat,lon", [
+        (-17.68298, 177.2756),  # Fiji
+        (31.6938, -85.1774),    # CONUS
+        (-20.35685, 148.95112), # Australia
+        (14.0, 121),            # Philippines
+        #(22.25, 114.20)        # Hong Kong
+        (-35.5, 174)            # New Zealand 
+    ])
+    def test_tcwind_locations(self, lat, lon):
+        ret = self.dc.tcwind_returnvalues(lat, lon, [100])
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert ret['header']['message'] is None
+        assert len(set(df.cell_id)) == 1
+
 
     @pytest.mark.parametrize("lats,lons", [
         ([-17.6525, 31.6938, 31.7359, 31.42, 31.532, 31.7, 31.5, 31.4, 31.1, 31.2, 31.3],
@@ -66,16 +83,22 @@ class TestDeepcyc():
         ('SSP2-4.5', 2050),
         ('SSP5-8.5', 2050),
     ])
-    def test_tcwind_future_climate(self, scenario, time_horizon):
+    @pytest.mark.parametrize("min_lat,min_lon,location", [
+        (28.0, -82.5, 'Tampa'),
+        (25.15, -80.735, 'Everglades'), 
+        (19.332, -155.757, 'Hawaii')
+    ])
+    def test_tcwind_future_climate(self, scenario, time_horizon, min_lat, min_lon, location):
 
-        lats, lons = generate_random_points(27.5, 28.5, -85, -80, 1)
-        lats.extend([25.15, 25.15])
-        lons.extend([-80.735, -80.725])
+        lats, lons = generate_random_points(min_lat, min_lon)
         return_periods = [100]
 
         ret1 = self.dc.tcwind_returnvalues(lats, lons, return_periods,
                                              scenario='current_climate', time_horizon='now')
-        assert ret1['header']['simulation_years'] == 41000
+        if location == 'Hawaii':
+            assert ret1['header']['simulation_years'] == 20500
+        else:
+            assert ret1['header']['simulation_years'] == 41000
         df_now = gpd.GeoDataFrame.from_features(ret1)
 
         ret2 = self.dc.tcwind_returnvalues(lats, lons, return_periods,
@@ -91,7 +114,7 @@ class TestDeepcyc():
     ])
     def test_tcwind_many_points(self, num_points):
 
-        lats, lons = generate_random_points(27.5, 33, -100, -80, num_points)
+        lats, lons = generate_random_points(27.5, -100, 33, -80, num_points)
         return_periods = [10, 25, 50, 100, 250, 500, 750]
 
         ret1 = self.dc.tcwind_returnvalues(lats, lons, return_periods,
@@ -114,7 +137,7 @@ class TestDeepcyc():
     ])
     def test_tcwind_returnvalues(self, min_lat, max_lat, min_lon, max_lon, n_points, return_periods):
         # Creates sample points
-        lats, lons = generate_random_points(min_lat, max_lat, min_lon, max_lon, n_points)
+        lats, lons = generate_random_points(min_lat, min_lon, max_lat, max_lon, n_points)
 
         # Use the DeepCyc client to call the API
         ret = self.dc.tcwind_returnvalues(lats, lons, return_periods)

@@ -17,7 +17,8 @@ LON_NAMES = ['longitude', 'Longitude', 'lon', 'Lon']
 
 
 def get_hazard(all_lats, all_lons, terrain_correction,
-               wind_speed_averaging_period, product='deepcyc', return_period=None):
+               wind_speed_averaging_period, product='deepcyc', scenario='current_climate',
+               time_horizon='now', return_period=None):
 
     if product.lower() == 'deepcyc':
         m = DeepCyc()
@@ -30,6 +31,8 @@ def get_hazard(all_lats, all_lons, terrain_correction,
                           np.array_split(all_lons, num_calls)):
         if m.product == 'DeepCyc' and return_period is not None:
             ret = m.tcwind_returnvalues(lats, lons, return_period,
+                                        scenario=scenario,
+                                        time_horizon=time_horizon,
                                         terrain_correction=terrain_correction,
                                         wind_speed_averaging_period=wind_speed_averaging_period)
         else:
@@ -41,6 +44,10 @@ def get_hazard(all_lats, all_lons, terrain_correction,
         df['lat'] = df.geometry.centroid.y
         df['lon'] = df.geometry.centroid.x
         df.drop(['geometry'], axis=1, inplace=True)
+
+        if m.product == 'DeepCyc':
+            df['scenario'] = ret['header']['scenario']
+            df['time_horizon'] = ret['header']['time_horizon']
 
     return df
 
@@ -60,6 +67,10 @@ def main():
                         default=[], help="A list of longitudes")
     parser.add_argument('--return_period', required=False, default=None, type=int,
                         help='Get a wind speed for this return period.')
+    parser.add_argument('--scenario', required=False, default='current_climate', type=str,
+                        help='The climate scenario to use. Can be: current_climate, SSP1-2.6, SSP2-4.5, SSP5-8.5')
+    parser.add_argument('--time_horizon', required=False, default='now', type=str,
+                        help='The time horizon to use. Can be: now, 2035, 2050, 2065, 2080.')
     parser.add_argument('--terrain_correction', required=False,
                         default='full_terrain_gust',
                         help="Terrain correction should be 'full_terrain_gust', 'open_water', 'open_terrain', 'all_open_terrain'")
@@ -67,6 +78,9 @@ def main():
                          default='3_seconds')
 
     args = parser.parse_args()
+
+    assert args.scenario in ['current_climate', 'SSP1-2.6', 'SSP2-4.5', 'SSP5-8.5']
+    assert args.time_horizon in ['now', '2035', '2050', '2065', '2080']
 
     if not args.location_csv:
         if args.latitudes == []:
@@ -96,6 +110,7 @@ def main():
     df = get_hazard(lats, lons,
                     args.terrain_correction,
                     args.wind_speed_averaging_period,
+                    scenario=args.scenario, time_horizon=args.time_horizon,
                     product=args.product, return_period=args.return_period)
 
     df.to_csv(args.output_filename, index_label='index')

@@ -2,9 +2,12 @@
 import geopandas as gpd
 import pytest
 import sys
+import time
 import numpy as np
 
 from pathlib import Path
+
+from test_deepcyc import generate_random_points
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from reaskapi.deepcyc import DeepCyc
@@ -57,9 +60,12 @@ class TestRiskScores:
         assert ret['header']['time_horizon'] == time_horizon
 
         assert ret['header']['message'] is None
-        assert df.wind_risk_score.iloc[0] < 5 and df.wind_risk_score.iloc[0] > 0.1
+        assert df.wind_risk_score.iloc[0] < 2 and df.wind_risk_score.iloc[0] > 0.03
         assert len(set(df.cell_id)) == 1
 
+        cat_rs = df.ts_wind_risk_score + df.cat1_wind_risk_score + df.cat2_wind_risk_score + \
+                     df.cat3_wind_risk_score + df.cat4_wind_risk_score + df.cat5_wind_risk_score
+        assert abs(1 - (cat_rs.item() / df.wind_risk_score.item())) < 1e-6
 
     def test_normalized_risk_scores(self):
 
@@ -76,3 +82,15 @@ class TestRiskScores:
         future_normalized_scores = df.wind_risk_score * scale
 
         assert (np.array(future_normalized_scores) > np.array(present_day_normalized_scores)).all()
+
+    def test_batch(self):
+
+        NUM_POINTS = 1000
+
+        lats, lons = generate_random_points(27.5, -85, 28.5, -80, NUM_POINTS)
+        start_time = time.time()
+        ret = self.dc.tcwind_riskscores(lats, lons)
+        print('Queried {} points in {}s'.format(NUM_POINTS, time.time() - start_time))
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) == NUM_POINTS
