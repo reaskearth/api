@@ -3,16 +3,29 @@ import logging
 import sys
 import time
 import requests
+from dataclasses import dataclass 
 from reaskapi.auth import get_access_token
 
 URL_MAX_BYTES = 2**15
+
+
+DEFAULT_BASE_URL = 'https://api.reask.earth/v2'
+DEFAULT_CONFIG_SECTION = 'default'
+
+@dataclass
+class ClientConfig:
+    """Config class to customize ApiClient
+    """
+    config_section: str = DEFAULT_CONFIG_SECTION
+    base_url: str = DEFAULT_BASE_URL
+
 
 class ApiClient:
     logger = logging.getLogger(__name__)
 
     def __init__(self, product, config_section='default'):
         """
-        Initialize client getting access token
+        (deprecated) Initialize client getting access token
         """
         self.access_token = get_access_token(config_section)
         self.product = product
@@ -20,6 +33,20 @@ class ApiClient:
 
         self.headers = {'Content-Type':'application/json',
              'Authorization': f'Bearer {self.access_token}'}
+
+    def __init__(self, product, config: ClientConfig=None):
+        """
+        Initialize client by ClientConfig
+        """
+        if config is None:
+            config = ClientConfig() # use default values
+        self.access_token = get_access_token(config.config_section)
+        self.product = product
+        self.base_url = config.base_url
+
+        self.headers = {'Content-Type':'application/json',
+             'Authorization': f'Bearer {self.access_token}'}
+
 
     def tcwind_events(self, lat, lon, **kwargs):
 
