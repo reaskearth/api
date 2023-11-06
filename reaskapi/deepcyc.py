@@ -1,11 +1,27 @@
 
 import time
-from reaskapi.api_client import ApiClient
+from reaskapi.api_client import ApiClient, ClientConfig
 
 class DeepCyc(ApiClient):
 
     def __init__(self, config_section='default'):
+        """(deprecated) Initialize DeepCyc class"""
         super().__init__('DeepCyc', config_section=config_section)
+
+
+    def __init__(self, config: ClientConfig = None):
+        """Initialize DeepCyc class by ClientConfig object"""
+        super().__init__('DeepCyc', config=config)
+
+
+    def tcwind_riskscores(self, lat, lon, **kwargs):
+
+        params = kwargs.copy()
+        params['lat'] = lat
+        params['lon'] = lon
+        self.logger.debug(f'Parameters: {params}')
+
+        return self._call_api(params, 'deepcyc/tcwind/riskscores')
 
     def tcwind_returnperiods(self, lat, lon, return_value, **kwargs):
 
