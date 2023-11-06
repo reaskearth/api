@@ -32,6 +32,25 @@ class TestMetryc():
 
         assert name in list(df.name)
 
+    # FIXME: API-50: disable Metryc terrain corrections for now
+    @pytest.mark.parametrize("lats,lons,name", [
+        ([29.95747], [-90.06295], 'Katrina')
+    ])
+    def test_tcwind_terrain_correction(self, lats, lons, name):
+        ret = self.mc.tcwind_events(lats, lons)
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert name in list(df.name)
+
+        for terrain_correction in ['open_water', 'open_terrain']:
+            try:
+                ret = self.mc.tcwind_events(lats, lons, terrain_correction=terrain_correction)
+            except Exception as exc:
+                assert 'Unsupported terrain correction type' in str(exc)
+                continue
+
+            assert False, "Should not reach here."
+
 
     @pytest.mark.parametrize("width_and_height,lower_lat,left_lon", [
         (10, 27.5, -83),
@@ -49,7 +68,7 @@ class TestMetryc():
 
         assert len(set(df.cell_id)) == width_and_height*width_and_height
 
-    
+
     @pytest.mark.parametrize("lats,lons,geometry,radius_km", [
         ([30], [-90], 'circle', 50),
         (30, -90, 'circle', 50),
@@ -85,20 +104,25 @@ class TestMetryc():
         """
         Test to see whether API is reporting circle to track intersection properly
         """
-        clat = 35.7385
-        clon = 137.1203
-        radius_km = 100
+
+        radius_km = 10
+
+        track_point = geopy.Point(30.27, -89.60)
+        clat, clon, _ = geopy.distance.distance(radius_km).destination(track_point, 90)
+
+        clat = 30.27
+        clon = -89.70
         ret = self.mc.tctrack_events([clat], [clon], geometry='circle', radius_km=radius_km)
         df = gpd.GeoDataFrame.from_features(ret)
 
-        assert 'Jebi' not in list(df.name)
+        assert 'Katrina' in list(df.name)
 
         geom = df.iloc[0].geometry
         ilat = geom.y
         ilon = geom.x
 
         dist = geopy.distance.geodesic((clat, clon), (ilat, ilon))
-        assert 1 - (dist.km / radius_km) < 0.002
+        assert abs(1 - (dist.km / radius_km)) < 1e-4
 
 
     @pytest.mark.skip(reason='FIXME: update github secrets to contain limited permission test user')
