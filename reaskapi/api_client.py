@@ -25,7 +25,7 @@ class ApiClient:
 
     def __init__(self, product, config_section='default'):
         """
-        Initialize client getting access token
+        (deprecated) Initialize client getting access token
         """
         self.access_token = get_access_token(config_section)
         self.product = product
