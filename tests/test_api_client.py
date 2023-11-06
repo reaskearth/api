@@ -20,36 +20,22 @@ class MockedResponse:
 
 
 @pytest.mark.parametrize("config", [None, ClientConfig("https://localhost:8001")])
-def test_deepcyc_config(config: ClientConfig):
+@pytest.mark.parametrize("product", ["metryc", "deepcyc"])
+def test_config(config: ClientConfig, product):
     with patch("reaskapi.api_client.get_access_token") as token_mock, patch(
         "requests.Session.send"
     ) as mock_session_send:
         token_mock.return_value = "dummy_token"
         mock_session_send.return_value = MockedResponse()
-        d = DeepCyc(config=config)
-        d.tctrack_events(36.8, -76, "circle", radius_km=50, wind_speed_units="kph")
+        if product == 'metryc':
+            obj = Metryc(config=config)
+        else:
+            obj = DeepCyc(config=config)
+        obj.tctrack_events(36.8, -76, "circle", radius_km=50, wind_speed_units="kph")
         mock_session_send.assert_called_once()
         name, args, kwargs = mock_session_send.mock_calls[0]
         print(args)
         assert (
             args[0].url
-            == f"{config.base_url if config is not None else 'https://api.reask.earth/v2'}/deepcyc/tctrack/events?radius_km=50&wind_speed_units=kph&lat=36.8&lon=-76&geometry=circle"
-        )
-
-
-@pytest.mark.parametrize("config", [None, ClientConfig("https://localhost:8001")])
-def test_metryc_config(config: ClientConfig):
-    with patch("reaskapi.api_client.get_access_token") as token_mock, patch(
-        "requests.Session.send"
-    ) as mock_session_send:
-        token_mock.return_value = "dummy_token"
-        mock_session_send.return_value = MockedResponse()
-        m = Metryc(config=config)
-        m.tctrack_events(36.8, -76, "circle", radius_km=50, wind_speed_units="kph")
-        mock_session_send.assert_called_once()
-        name, args, kwargs = mock_session_send.mock_calls[0]
-        print(args)
-        assert (
-            args[0].url
-            == f"{config.base_url if config is not None else 'https://api.reask.earth/v2'}/metryc/tctrack/events?radius_km=50&wind_speed_units=kph&lat=36.8&lon=-76&geometry=circle"
+            == f"{config.base_url if config is not None else 'https://api.reask.earth/v2'}/{product}/tctrack/events?radius_km=50&wind_speed_units=kph&lat=36.8&lon=-76&geometry=circle"
         )
