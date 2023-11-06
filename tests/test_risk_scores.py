@@ -87,7 +87,7 @@ class TestRiskScores:
 
         NUM_POINTS = 1000
 
-        lats, lons = generate_random_points(27.5, 28.5, -85, -80, NUM_POINTS)
+        lats, lons = generate_random_points(27.5, -85, 28.5, -80, NUM_POINTS)
         start_time = time.time()
         ret = self.dc.tcwind_riskscores(lats, lons)
         print('Queried {} points in {}s'.format(NUM_POINTS, time.time() - start_time))
