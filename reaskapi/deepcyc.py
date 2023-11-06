@@ -4,8 +4,14 @@ from reaskapi.api_client import ApiClient, ClientConfig
 
 class DeepCyc(ApiClient):
 
-    def __init__(self, config_section='default', config: ClientConfig = None):
-        super().__init__('DeepCyc', config_section=config_section, config=config)
+    def __init__(self, config_section='default'):
+        """(deprecated) Initialize DeepCyc class"""
+        super().__init__('DeepCyc', config_section=config_section)
+
+
+    def __init__(self, config: ClientConfig = None):
+        """Initialize DeepCyc class by ClientConfig object"""
+        super().__init__('DeepCyc', config=config)
 
 
     def tcwind_riskscores(self, lat, lon, **kwargs):

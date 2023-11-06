@@ -20,7 +20,7 @@ class MockedResponse:
 
 
 @pytest.mark.parametrize("config", [None, ClientConfig("https://localhost:8001")])
-def test_deep_cyc_config(config: ClientConfig):
+def test_deepcyc_config(config: ClientConfig):
     with patch("reaskapi.api_client.get_access_token") as token_mock, patch(
         "requests.Session.send"
     ) as mock_session_send:
