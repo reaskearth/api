@@ -29,8 +29,7 @@ class ApiClient:
         """
         self.access_token = get_access_token(config_section)
         self.product = product
-        #self.base_url = 'https://api.reask.earth/v2'
-        self.base_url = 'http://127.0.0.1:8002'
+        self.base_url = 'https://api.reask.earth/v2'
 
         self.headers = {'Content-Type':'application/json',
              'Authorization': f'Bearer {self.access_token}'}
