@@ -55,7 +55,7 @@ class TestDeepcyc():
         (-20.35685, 148.95112), # Australia
         (14.0, 121),            # Philippines
         #(22.25, 114.20)        # Hong Kong
-        (-35.5, 174)            # New Zealand 
+        (-35.5, 174)            # New Zealand
     ])
     def test_tcwind_locations(self, lat, lon):
         ret = self.dc.tcwind_returnvalues(lat, lon, [100])
@@ -76,19 +76,26 @@ class TestDeepcyc():
         assert len(df) == len(lats)
 
     @pytest.mark.parametrize("scenario,time_horizon", [
-        ('SSP1-2.6', 2035),
-        ('SSP2-4.5', 2035),
-        ('SSP5-8.5', 2035),
-        ('SSP1-2.6', 2050),
-        ('SSP2-4.5', 2050),
-        ('SSP5-8.5', 2050),
+        ('SSP1-2.6', '2035'),
+        ('SSP2-4.5', '2035'),
+        ('SSP5-8.5', '2035'),
+        ('SSP1-2.6', '2050'),
+        ('SSP2-4.5', '2050'),
+        ('SSP5-8.5', '2050'),
+        ('SSP1-2.6', '2065'),
+        ('SSP2-4.5', '2065'),
+        ('SSP5-8.5', '2065'),
     ])
     @pytest.mark.parametrize("min_lat,min_lon,location", [
+        (-20.2, 148.97, 'Whitsunday Island'),
         (28.0, -82.5, 'Tampa'),
-        (25.15, -80.735, 'Everglades'), 
+        (25.15, -80.735, 'Everglades'),
         (19.332, -155.757, 'Hawaii')
     ])
     def test_tcwind_future_climate(self, scenario, time_horizon, min_lat, min_lon, location):
+
+        if time_horizon == '2065' and location != 'Whitsunday Island':
+            return
 
         lats, lons = generate_random_points(min_lat, min_lon)
         return_periods = [100]
@@ -103,6 +110,8 @@ class TestDeepcyc():
 
         ret2 = self.dc.tcwind_returnvalues(lats, lons, return_periods,
                                             scenario=scenario, time_horizon=time_horizon)
+        assert ret2['header']['scenario'] == scenario
+        assert ret2['header']['time_horizon'] == time_horizon
         assert ret2['header']['simulation_years'] == 25000
         df_future = gpd.GeoDataFrame.from_features(ret2)
 
