@@ -51,6 +51,9 @@ def get_hazard(all_lats, all_lons, terrain_correction,
                                     time_horizon=time_horizon,
                                     terrain_correction=terrain_correction,
                                     wind_speed_averaging_period=wind_speed_averaging_period)
+            if ret:
+                assert ret['header']['scenario'] == scenario
+                assert ret['header']['time_horizon'] == time_horizon
 
         if not ret:
             return None
@@ -58,8 +61,6 @@ def get_hazard(all_lats, all_lons, terrain_correction,
         assert product in ret['header']['product']
         assert ret['header']['terrain_correction'] == terrain_correction
         assert ret['header']['wind_speed_averaging_period'] == wind_speed_averaging_period
-        assert ret['header']['scenario'] == scenario
-        assert ret['header']['time_horizon'] == time_horizon
 
         if df is None:
             df = gpd.GeoDataFrame.from_features(ret)
