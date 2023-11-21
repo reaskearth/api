@@ -20,34 +20,63 @@ def get_hazard(all_lats, all_lons, terrain_correction,
                wind_speed_averaging_period, product='deepcyc', scenario='current_climate',
                time_horizon='now', return_period=None):
 
+    num_calls = ceil(len(all_lats) / 100)
+    if return_period is None and product.lower() == 'deepcyc':
+        # We are pulling the full stochastic history - do one lat, lon pair at a time.
+        num_calls = len(all_lats)
+
     if product.lower() == 'deepcyc':
         m = DeepCyc()
     else:
-        assert product.lower() == 'metryc'
         m = Metryc()
 
-    num_calls = ceil(len(all_lats) / 1000)
+    df = None
     for lats, lons in zip(np.array_split(all_lats, num_calls),
                           np.array_split(all_lons, num_calls)):
-        if m.product == 'DeepCyc' and return_period is not None:
+
+        if m.product == 'Metryc':
+            ret = m.tcwind_events(lats, lons,
+                          terrain_correction=terrain_correction,
+                          wind_speed_averaging_period=wind_speed_averaging_period)
+        elif return_period is not None:
+            assert m.product == 'DeepCyc'
             ret = m.tcwind_returnvalues(lats, lons, return_period,
                                         scenario=scenario,
                                         time_horizon=time_horizon,
                                         terrain_correction=terrain_correction,
                                         wind_speed_averaging_period=wind_speed_averaging_period)
         else:
-            ret = m.tcwind_events(lats, lons,
-                          terrain_correction=terrain_correction,
-                          wind_speed_averaging_period=wind_speed_averaging_period)
+            assert m.product == 'DeepCyc'
+            ret = m.tcwind_events(lats, lons, scenario=scenario,
+                                    time_horizon=time_horizon,
+                                    terrain_correction=terrain_correction,
+                                    wind_speed_averaging_period=wind_speed_averaging_period)
+            if ret:
+                assert ret['header']['scenario'] == scenario
+                assert ret['header']['time_horizon'] == time_horizon
 
-        df = gpd.GeoDataFrame.from_features(ret)
-        df['lat'] = df.geometry.centroid.y
-        df['lon'] = df.geometry.centroid.x
-        df.drop(['geometry'], axis=1, inplace=True)
+        if not ret:
+            return None
 
-        if m.product == 'DeepCyc':
-            df['scenario'] = ret['header']['scenario']
-            df['time_horizon'] = ret['header']['time_horizon']
+        assert product in ret['header']['product']
+        assert ret['header']['terrain_correction'] == terrain_correction
+        assert ret['header']['wind_speed_averaging_period'] == wind_speed_averaging_period
+
+        if df is None:
+            df = gpd.GeoDataFrame.from_features(ret)
+        else:
+            tmp_df = gpd.GeoDataFrame.from_features(ret)
+            df = pd.concat((df, tmp_df), ignore_index=True)
+
+    if m.product == 'DeepCyc':
+        df['scenario'] = scenario
+        df['time_horizon'] = time_horizon
+
+    df['terrain_correction'] = terrain_correction
+    df['wind_speed_averaging_period'] = wind_speed_averaging_period
+    df['lat'] = df.geometry.centroid.y
+    df['lon'] = df.geometry.centroid.x
+    df.drop(['geometry'], axis=1, inplace=True)
 
     return df
 
@@ -82,6 +111,10 @@ def main():
     assert args.scenario in ['current_climate', 'SSP1-2.6', 'SSP2-4.5', 'SSP5-8.5']
     assert args.time_horizon in ['now', '2035', '2050', '2065', '2080']
 
+    if Path(args.output_filename).exists():
+        print(f'Error: output file {args.output_filename} already exists.', file=sys.stderr)
+        return 1
+
     if not args.location_csv:
         if args.latitudes == []:
             print('Error: please use one of  --location_csv or --latitudes, --longitudes')
@@ -113,7 +146,11 @@ def main():
                     scenario=args.scenario, time_horizon=args.time_horizon,
                     product=args.product, return_period=args.return_period)
 
-    df.to_csv(args.output_filename, index_label='index')
+    if df is not None:
+        df.to_csv(args.output_filename, index_label='index')
+        return 0
+    else:
+        return 1
 
 
 if __name__ == '__main__':
