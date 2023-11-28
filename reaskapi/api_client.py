@@ -69,6 +69,28 @@ class ApiClient:
         return self._call_api(params, f'{self.product.lower()}/tctrack/events')
 
 
+    def tctrack_wind_speed_events(self, lat, lon, geometry, **kwargs):
+
+        params = kwargs.copy()
+        params['lat'] = lat
+        params['lon'] = lon
+        params['geometry'] = geometry
+        self.logger.debug(f'Parameters: {params}')
+
+        return self._call_api(params, f'{self.product.lower()}/tctrack/wind_speed/events')
+
+
+    def tctrack_central_pressure_events(self, lat, lon, geometry, **kwargs):
+
+        params = kwargs.copy()
+        params['lat'] = lat
+        params['lon'] = lon
+        params['geometry'] = geometry
+        self.logger.debug(f'Parameters: {params}')
+
+        return self._call_api(params, f'{self.product.lower()}/tctrack/central_pressure/events')
+
+
     def _call_api(self, params, endpoint):
         """
         Base method to send authenticated calls to the API HTTP endpoints
