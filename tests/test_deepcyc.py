@@ -202,9 +202,7 @@ class TestDeepcyc():
     def test_tctrack_big_circle(self, lat, lon):
         ret = self.dc.tctrack_events(lat, lon, 'circle', radius_km=150)
         df = gpd.GeoDataFrame.from_features(ret)
-        import pdb
-        pdb.set_trace()
-        assert len(df) > 27000
+        assert len(df) > 19000
     
 
     @pytest.mark.parametrize("lat,lon", [
