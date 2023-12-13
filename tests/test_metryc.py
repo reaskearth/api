@@ -32,14 +32,15 @@ class TestMetryc():
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert name in list(df.name)
-    
+
     @pytest.mark.parametrize("lats,lons,status", [
         ([-17.6525, 30.6], [177.2634, -90.0], {'OK', 'NO CONTENT'}),
         ([24.0], [-93.0], {'NO CONTENT'}),
+        ([30.6], [-90.0], {'OK'}),
         ([30, 24.0],[-93.0, -93.0], {'OK', 'NO CONTENT'})])
     def test_tcwind_status(self, lats, lons, status):
 
-        ret = self.mc.tcwind_events(lats, lons)
+        ret = self.mc.tcwind_events(lats, lons, terrain_correction='open_water')
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert set(df.status) == status
