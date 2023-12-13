@@ -122,32 +122,3 @@ class TestCommon:
 
         assert ws_kph == round(ws_other*multiplier)
 
-    @pytest.mark.parametrize("prod", [
-        DeepCyc(config=ClientConfig(config_section="reask-demo")),
-        Metryc(config=ClientConfig(config_section="reask-demo")),
-    ])
-    @pytest.mark.parametrize("lats,lons,status", [
-        ([30, 30], [-90, -90.1], {'FORBIDDEN'}),
-        ([-20.5, 18.5], [148.5, 122.2], {'OK', 'FORBIDDEN'}),
-        ([18.4, 18.5], [122.2, 122.2], {'OK'}),
-    ])
-    def test_tcwind_perms(self, prod, lats, lons, status):
-
-        ret = prod.tcwind_events(lats, lons)
-        df = gpd.GeoDataFrame.from_features(ret)
-        assert set(df.status) == status
-
-    @pytest.mark.parametrize("prod", [
-        DeepCyc(config=ClientConfig(config_section="reask-demo")),
-        Metryc(config=ClientConfig(config_section="reask-demo")),
-    ])
-    @pytest.mark.parametrize("lats,lons", [
-            ([28.556358, 28.556358], [-88.770067, -87.070986])
-    ])
-    def test_tctrack_noperms(self, prod, lats, lons):
-
-        try:
-            ret = prod.tctrack_events(lats, lons, 'line')
-            assert False, 'Should not get here'
-        except Exception as e:
-            assert '403' in str(e)

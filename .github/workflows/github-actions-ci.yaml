@@ -33,11 +33,8 @@ jobs:
         echo "[default]" > $HOME\.reask
         echo "username = $Env:USERNAME" >> $HOME\.reask
         echo "password = $Env:PASSWORD" >> $HOME\.reask
-        echo "[$Env:DEMO_USERNAME]" > $HOME\.reask
-        echo "username = $Env:DEMO_USERNAME" >> $HOME\.reask
-        echo "password = $Env:DEMO_PASSWORD" >> $HOME\.reask
         chmod 600 $HOME\.reask
-    
+
     - name: Set up credentials (Linux and MacOS)
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
       env:
@@ -49,9 +46,6 @@ jobs:
         echo "[default]" > ~/.reask
         echo "username = ${USERNAME}" >> ~/.reask
         echo "password = ${PASSWORD}" >> ~/.reask
-        echo "[${DEMO_USERNAME}]" > $HOME\.reask
-        echo "username = ${DEMO_USERNAME}" >> $HOME\.reask
-        echo "password = ${DEMO_PASSWORD}" >> $HOME\.reask
         chmod 600 ~/.reask
 
     - name: Git checkout 

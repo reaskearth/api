@@ -21,15 +21,10 @@ jobs:
       env:
         USERNAME: ${{ secrets.REASK_API_USERNAME }}
         PASSWORD: ${{ secrets.REASK_API_PASSWORD }}
-        DEMO_USERNAME: ${{ secrets.REASK_DEMO_API_USERNAME }}
-        DEMO_PASSWORD: ${{ secrets.REASK_DEMO_API_PASSWORD }}
       run: |
         echo "[default]" > ~/.reask
         echo "username = ${USERNAME}" >> ~/.reask
         echo "password = ${PASSWORD}" >> ~/.reask
-        echo "[${DEMO_USERNAME}]" > $HOME\.reask
-        echo "username = ${DEMO_USERNAME}" >> $HOME\.reask
-        echo "password = ${DEMO_PASSWORD}" >> $HOME\.reask
         chmod 600 ~/.reask
 
     - name: Git checkout 
