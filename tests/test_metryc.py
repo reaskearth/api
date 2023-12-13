@@ -12,7 +12,6 @@ import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from reaskapi.api_client import ClientConfig
 from reaskapi.metryc import Metryc
 
 

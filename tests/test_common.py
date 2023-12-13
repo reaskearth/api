@@ -6,7 +6,6 @@ import geopandas as gpd
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from reaskapi.deepcyc import DeepCyc
 from reaskapi.metryc import Metryc
-from reaskapi.api_client import ClientConfig
 
 def df_to_dict(df):
 
@@ -121,4 +120,3 @@ class TestCommon:
         assert ret['header']['wind_speed_units'] == wind_speed_units
 
         assert ws_kph == round(ws_other*multiplier)
-

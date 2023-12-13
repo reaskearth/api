@@ -26,8 +26,6 @@ jobs:
       env:
         USERNAME: ${{ secrets.REASK_API_USERNAME }}
         PASSWORD: ${{ secrets.REASK_API_PASSWORD }}
-        DEMO_USERNAME: ${{ secrets.REASK_DEMO_API_USERNAME }}
-        DEMO_PASSWORD: ${{ secrets.REASK_DEMO_API_PASSWORD }}
       run: |
         echo $HOME\.reask
         echo "[default]" > $HOME\.reask
@@ -40,8 +38,6 @@ jobs:
       env:
         USERNAME: ${{ secrets.REASK_API_USERNAME }}
         PASSWORD: ${{ secrets.REASK_API_PASSWORD }}
-        DEMO_USERNAME: ${{ secrets.REASK_DEMO_API_USERNAME }}
-        DEMO_PASSWORD: ${{ secrets.REASK_DEMO_API_PASSWORD }}
       run: |
         echo "[default]" > ~/.reask
         echo "username = ${USERNAME}" >> ~/.reask

@@ -11,7 +11,6 @@ from pyproj import Transformer
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from reaskapi.api_client import ClientConfig
 from reaskapi.deepcyc import DeepCyc
 
 def generate_random_points(min_lat, min_lon, max_lat=None, max_lon=None, n_points=1):
