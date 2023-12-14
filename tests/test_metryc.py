@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 import shapely
 import json
+import geopy
 import geopy.distance
 import sys
 
@@ -31,6 +32,19 @@ class TestMetryc():
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert name in list(df.name)
+
+    @pytest.mark.parametrize("lats,lons,status", [
+        ([-17.6525, 30.6], [177.2634, -90.0], {'OK', 'NO CONTENT'}),
+        ([24.0], [-93.0], {'NO CONTENT'}),
+        ([30.6], [-90.0], {'OK'}),
+        ([30, 24.0],[-93.0, -93.0], {'OK', 'NO CONTENT'})])
+    def test_tcwind_status(self, lats, lons, status):
+
+        ret = self.mc.tcwind_events(lats, lons, terrain_correction='open_water')
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert set(df.status) == status
+
 
     @pytest.mark.parametrize("lats,lons,name", [
         ([29.95747], [-90.06295], 'Katrina')
@@ -116,17 +130,3 @@ class TestMetryc():
 
         dist = geopy.distance.geodesic((clat, clon), (ilat, ilon))
         assert abs(1 - (dist.km / radius_km)) < 1e-4
-
-
-    @pytest.mark.skip(reason='FIXME: update github secrets to contain limited permission test user')
-    @pytest.mark.parametrize("lats,lons", [
-        ([29.95747], [-90.06295])
-    ])
-    def test_tcwind_noperms(self, lats, lons):
-
-        tmp_mc = Metryc(config_section='hamilton_island')
-        try:
-            ret = tmp_mc.tcwind_events(lats, lons)
-            assert False, 'Should not get here'
-        except Exception as e:
-            assert '403' in str(e)

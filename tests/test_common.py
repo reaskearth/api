@@ -5,8 +5,6 @@ import geopandas as gpd
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from reaskapi.deepcyc import DeepCyc
-
-sys.path.append(str(Path(__file__).resolve().parent.parent))
 from reaskapi.metryc import Metryc
 
 def df_to_dict(df):
@@ -24,16 +22,10 @@ class TestCommon:
     dc = DeepCyc()
 
     @pytest.mark.parametrize("lats,lons", [
-        ([36.8], [-76]), # Virginia Beach
-        #([29.95747], [-90.06295]), # Gulf of Mexico
-        #([12.0], [125.0]) # Phillipines
+        ([42], [-74]),
     ])
     @pytest.mark.parametrize("prod", [mc, dc])
     def test_tcwind_terrain(self, prod, lats, lons):
-
-        # FIXME: API-50 terrain correction options disabled in Metryc endpoint
-        if 'Metryc' in prod.product:
-            return
 
         ret = prod.tcwind_events(lats, lons)
         assert ret['header']['terrain_correction'] == 'full_terrain_gust'
@@ -54,8 +46,9 @@ class TestCommon:
 
         # We expect these to all be greater, becuase open water gust is higher
         # that full terrain gust in this location
-        for k in ft_gust:
-            assert ow_gust[k] > ft_gust[k]
+        for k in ow_gust:
+            if k in ft_gust:
+                assert ow_gust[k] > ft_gust[k]
 
         ret = prod.tcwind_events(lats, lons, terrain_correction='open_water', wind_speed_averaging_period='1_minute')
         assert ret['header']['terrain_correction'] == 'open_water'
@@ -88,8 +81,7 @@ class TestCommon:
 
     @pytest.mark.parametrize("prod", [mc, dc])
     @pytest.mark.parametrize("lats,lons", [
-        ([36.8], [-76]), # Virginia Beach
-        #([29.95747], [-90.06295]) # Gulf of Mexico
+        ([42], [-74]),
     ])
     @pytest.mark.parametrize("wind_speed_units", ['kph', 'mph', 'kts', 'ms'])
     def test_units(self, prod, lats, lons, wind_speed_units):

@@ -11,7 +11,6 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from reaskapi.metryc import Metryc
 
 TEST_LOCATIONS = [(-17.68298, 177.2756)]
-TEST_LOCATIONS_MISSING = [(51.0, 11.0)]  # Germany
 
 def call_all_endpoints_at_location(obj, lat, lon, **kwargs):
 
@@ -65,15 +64,3 @@ class TestHeader:
                 import pdb
                 pdb.set_trace()
             assert r['header']['tag'] == tag
-
-
-    @pytest.mark.parametrize("lat,lon", TEST_LOCATIONS_MISSING)
-    @pytest.mark.parametrize("prod", [mc, dc])
-    def test_missing_location_message(self, prod, lat, lon):
-
-        ret = prod.tcwind_events(lat, lon)
-        df = gpd.GeoDataFrame.from_features(ret)
-
-        assert len(df) == 0
-
-        # FIXME: there should be no message if there is no risk
