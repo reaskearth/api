@@ -56,7 +56,17 @@ class ApiClient:
         self.logger.debug(f'Parameters: {params}')
 
         return self._call_api(params, f'{self.product.lower()}/tcwind/events')
+    
+    def tcwind_footprints(self, min_lat, max_lat, min_lon, max_lon, **kwargs):
 
+        params = kwargs.copy()
+        params['min_lat'] = min_lat
+        params['max_lat'] = max_lat
+        params['min_lon'] = min_lon
+        params['max_lon'] = max_lon
+        self.logger.debug(f'Parameters: {params}')
+
+        return self._call_api(params, f'{self.product.lower()}/tcwind/footprints')
 
     def tctrack_events(self, lat, lon, geometry, **kwargs):
 
