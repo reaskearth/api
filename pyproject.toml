@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[project]
+name = "reaskapi"
+version = "1.0.0"
+description = "Reask API Client"
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    "requests",
+]
