@@ -130,3 +130,37 @@ class TestMetryc():
 
         dist = geopy.distance.geodesic((clat, clon), (ilat, ilon))
         assert abs(1 - (dist.km / radius_km)) < 1e-4
+
+    @pytest.mark.parametrize("min_lat,max_lat,min_lon,max_lon,storm_name,storm_season,terrain_correction,wind_speed_averaging_period,samples", [
+        (29.68, 30.13, -90.32, -89.78, 'Katrina', 2005, 'full_terrain_gust', '3_seconds', 5),
+        (29.68, 30.13, -90.32, -89.78, 'Katrina', 2005, 'open_water', '1_minute', 5),
+        (29.68, 30.13, -90.32, -89.78, 'Katrina', 2005, 'open_terrain', '1_minute', 5),
+        (11.11, 11.44, 124.5, 125, 'Haiyan', 2013, 'full_terrain_gust', '3_seconds', 5),
+        (11.11, 11.44, 124.5, 125, 'Haiyan', 2013, 'open_water', '1_minute', 5),
+        (11.11, 11.44, 124.5, 125, 'Haiyan', 2013, 'open_terrain', '1_minute', 5),
+
+    ])
+    def test_tcwind_crosscheck(self, min_lat, max_lat, min_lon, max_lon, storm_name, storm_season, terrain_correction, wind_speed_averaging_period, samples):
+        """
+        Compare TC wind values returning from TC Wind events and footprint endpoints
+        """
+        ret = self.mc.tcwind_footprint(min_lat, max_lat, min_lon, max_lon, storm_name=storm_name, storm_season=storm_season, terrain_correction=terrain_correction, wind_speed_averaging_period=wind_speed_averaging_period)
+
+        # get random samples from the footprint
+        df = gpd.GeoDataFrame.from_features(ret)
+        df = df.sample(samples)
+
+        # calculate center of each geometry
+        df['center'] = df.geometry.centroid
+
+        # iterate over data frame calling the events endpoint
+        for i, row in df.iterrows():
+            ret2 = self.mc.tcwind_events(row.center.y, row.center.x, terrain_correction=terrain_correction, wind_speed_averaging_period=wind_speed_averaging_period)
+            df2 = gpd.GeoDataFrame.from_features(ret2)
+            df2 = df2[(df2.name == storm_name) & (df2.year == storm_season)]
+
+            # ensure there's a single match from the tcwind events endpoint response
+            assert df2.shape[0] == 1
+
+            # check that the wind speed is the same
+            assert df2.iloc[0].wind_speed == row.wind_speed
