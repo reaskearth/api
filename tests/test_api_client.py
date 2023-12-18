@@ -1,9 +1,11 @@
 import sys
 import pytest
 import requests
+
 from pathlib import Path
 from unittest.mock import Mock, patch
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Dict
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from reaskapi.api_client import ClientConfig
@@ -14,6 +16,8 @@ from reaskapi.metryc import Metryc
 @dataclass
 class MockedResponse:
     status_code: int = 200
+    headers: Dict[str, str] = field(default_factory=lambda: {"Content-Type": "application/json"})
+    content: str = ""
 
     def json(arg):
         return {}
