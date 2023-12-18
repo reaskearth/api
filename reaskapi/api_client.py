@@ -56,7 +56,17 @@ class ApiClient:
         self.logger.debug(f'Parameters: {params}')
 
         return self._call_api(params, f'{self.product.lower()}/tcwind/events')
+    
+    def tcwind_footprint(self, min_lat, max_lat, min_lon, max_lon, **kwargs):
 
+        params = kwargs.copy()
+        params['min_lat'] = min_lat
+        params['max_lat'] = max_lat
+        params['min_lon'] = min_lon
+        params['max_lon'] = max_lon
+        self.logger.debug(f'Parameters: {params}')
+
+        return self._call_api(params, f'{self.product.lower()}/tcwind/footprint')
 
     def tctrack_events(self, lat, lon, geometry, **kwargs):
 
@@ -116,11 +126,18 @@ class ApiClient:
 
             # throw an exception in case of an error
             if res.status_code != 200:
-                err_msg = res.json()['detail']
+                if res.headers['Content-Type'] == 'application/json':
+                    err_msg = res.json()['detail']
+                else:
+                    err_msg = res.content
+
                 self.logger.debug(err_msg)
                 raise Exception(f"API returned HTTP {res.status_code} with {err_msg}")
 
         self.logger.info(f"querying {endpoint} took {round((time.time() - start_time) * 1000)}ms")
-        self.logger.debug(res.json())
-
-        return res.json()
+        
+        if res.headers['Content-Type'] == 'application/json':
+            self.logger.debug(res.json())
+            return res.json()
+        else:
+            return res.content
