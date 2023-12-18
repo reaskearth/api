@@ -71,12 +71,14 @@ def get_hazard(all_lats, all_lons, terrain_correction,
     if m.product == 'DeepCyc':
         df['scenario'] = scenario
         df['time_horizon'] = time_horizon
+        df['simulation_years'] = ret['header']['simulation_years']
 
     df['terrain_correction'] = terrain_correction
     df['wind_speed_averaging_period'] = wind_speed_averaging_period
     df['lat'] = df.geometry.centroid.y
     df['lon'] = df.geometry.centroid.x
     df.drop(['geometry'], axis=1, inplace=True)
+
 
     return df
 
