@@ -32,7 +32,7 @@ jobs:
         echo "username = $Env:USERNAME" >> $HOME\.reask
         echo "password = $Env:PASSWORD" >> $HOME\.reask
         chmod 600 $HOME\.reask
-    
+
     - name: Set up credentials (Linux and MacOS)
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
       env:

@@ -45,6 +45,7 @@ class TestDeepcyc():
         ret = self.dc.tcwind_events(lat, lon)
         df = gpd.GeoDataFrame.from_features(ret)
 
+        assert (df.status == 'OK').all()
         assert ret['header']['message'] is None
         assert len(set(df.cell_id)) == 1
 
@@ -74,6 +75,21 @@ class TestDeepcyc():
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert len(df) == len(lats)
+
+
+    @pytest.mark.parametrize("lats,lons,status", [
+        ([-17.6525, 30.6], [177.2634, -90.0], {'OK'}),
+        ([24.0], [-93.0], {'NO CONTENT'}),
+        ([30.6], [-90.0], {'OK'}),
+        ([35, 24.0],[-93.0, -93.0], {'OK', 'NO CONTENT'})
+    ])
+    def test_tcwind_status(self, lats, lons, status):
+        ret = self.dc.tcwind_returnvalues(lats, lons, [100], terrain_correction='open_water')
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert set(df.status) == status
+        assert len(df) == len(lats)
+
 
     @pytest.mark.parametrize("scenario,time_horizon", [
         ('SSP1-2.6', '2035'),
@@ -184,9 +200,9 @@ class TestDeepcyc():
         (34.076463, -84.652037), 
     ])
     def test_tctrack_big_circle(self, lat, lon):
-        ret = self.dc.tctrack_events(lat, lon, 'circle', radius_km=200)
+        ret = self.dc.tctrack_events(lat, lon, 'circle', radius_km=150)
         df = gpd.GeoDataFrame.from_features(ret)
-        assert len(df) > 27000
+        assert len(df) > 19000
     
 
     @pytest.mark.parametrize("lat,lon", [
@@ -279,39 +295,3 @@ class TestDeepcyc():
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert len(df.wind_speed) == len(return_periods)
-
-
-    @pytest.mark.skip(reason='FIXME: update github secrets to contain limited permission test user')
-    @pytest.mark.parametrize("lats,lons", [
-        ([-20.5, -20.3, -20.3536], [148.5, 149.5, 148.9573]),
-    ])
-    def test_tcwind_perms(self, lats, lons):
-
-        tmp_dc = DeepCyc(config_section='hamilton_island')
-        # Use the DeepCyc client to call the API
-        return_periods = [10, 25, 50, 100, 250, 500]
-        ret1 = tmp_dc.tcwind_returnvalues(lats, lons, return_periods)
-        df1 = gpd.GeoDataFrame.from_features(ret1)
-
-        assert len(set(df1.cell_id)) == 1
-        assert ret1['header']['message'] == 'Error: one or more requested locations either unsupported or unauthorized.'
-
-        lats = [-20.3536]
-        lons = [148.9573]
-        ret2 = tmp_dc.tcwind_returnvalues(lats, lons, return_periods)
-        df2 = gpd.GeoDataFrame.from_features(ret2)
-
-        assert ret1['features'] == ret2['features']
-
-    @pytest.mark.skip(reason='FIXME: update github secrets to contain limited permission test user')
-    @pytest.mark.parametrize("lats,lons", [
-        ([28.556358, 28.556358], [-88.770067, -87.070986])
-    ])
-    def test_tctrack_noperms(self, lats, lons):
-
-        tmp_dc = DeepCyc(config_section='hamilton_island')
-        try:
-            ret = tmp_dc.tctrack_events(lats, lons, 'line')
-            assert False, 'Should not get here'
-        except Exception as e:
-            assert '403' in str(e)
