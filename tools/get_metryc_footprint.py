@@ -18,15 +18,14 @@ def make_output_filename(parsed_args):
                    'open_terrain': 'OT'}
     args['terrain_correction'] = terrain_map[args['terrain_correction']]
 
+    suffix = args['format']
+    template = '{storm_id}'
+
     if args['format'] == 'geotiff':
         suffix = 'tiff'
-    else:
-        suffix = args['format']
 
     if args['storm_name']:
         template = '{storm_name}_{storm_season}'
-    else:
-        template = '{storm_id}'
 
     args['wind_speed_averaging_period'] = args['wind_speed_averaging_period'].replace('_', '-')
 
@@ -80,10 +79,7 @@ def main():
         parser.print_help()
         return 1
 
-    min_lat = args.bbox[0]
-    max_lat = args.bbox[1]
-    min_lon = args.bbox[2]
-    max_lon = args.bbox[3]
+    min_lat, max_lat, min_lon, max_lon = args.bbox
 
     if min_lat > max_lat:
         print('Bounding box min_lat larger than max_lat.')
