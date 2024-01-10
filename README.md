@@ -27,7 +27,7 @@ The interactive documentation can be found here: https://api.reask.earth/v2/docs
 
 Example code for all endpoints can be found in the `tests` directory.
 
-## Quickstart
+## Quickstart and Tools
 
 Put your Reask credentials into a file called `.reask` in your HOME directory using the following format:
 
@@ -49,7 +49,7 @@ Then visit https://github.com/reaskearth/api/ to access the Python3 API client c
 git clone https://github.com/reaskearth/api.git reaskapi
 ```
 
-Once downloaded you can test the code by running one of the tools in the `tools` folder. For example the `get_hazard_csv.py` script:
+Once downloaded you can test the code by running one of the tools in the `tools` folder. For example the `get_hazard_csv.py` script uses DeepCyc and Metryc to give global TC risk across many climate scenarios and time horizons including the present day:
 ```Bash
 # Change the current directory to the tools folder
 cd reaskapi
@@ -73,6 +73,14 @@ After a succesfull execution of `get_hazard_csv.py` utility you can check the re
 ```Bash
 cat DeepCyc_RP_100yr.csv
 ```
+
+Another useful tool is the `get_metryc_footprint.py` script. This allows you to download a Metryc surface wind footprint for any recorded Tropical Cyclone globally. It can write output in either GeoTiff or GeoJSON formats. For example, after setting up the Python environment as above try running:
+
+```Bash
+python3 tools/get_metryc_footprint.py --bbox 30 31 -88 -86 --storm_name Dennis --storm_season 2005
+```
+
+This should write out a file with a default name `Dennis_2005_FT_3-seconds_kph.tiff` which can be viewed using GIS software such as QGIS.
 
 ## Contact
 
