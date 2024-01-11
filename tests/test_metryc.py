@@ -130,3 +130,40 @@ class TestMetryc():
 
         dist = geopy.distance.geodesic((clat, clon), (ilat, ilon))
         assert abs(1 - (dist.km / radius_km)) < 1e-4
+
+
+    @pytest.mark.parametrize("lat,lon,tag", [
+        (-20.353, 148.957, 'Hamilton_Island'),
+        (-17.87115, 146.1045, 'Mission_Beach'),
+        (25.79, -80.2, 'Miami')
+    ])
+    def test_compare_events_to_footprint(self, lat, lon, tag):
+        """
+        Check that the events and footprint endpoints work at different
+        locations and return consistent results
+        """
+
+        res = 2**-7 + 2**-9
+
+        ret_ev = self.mc.tcwind_events(lat, lon, tag=tag)
+        df_ev = gpd.GeoDataFrame.from_features(ret_ev)
+        df_ev = df_ev.sort_values('wind_speed', ascending=False)
+
+        name = df_ev.iloc[0]['name']
+        year = df_ev.iloc[0]['year']
+
+        min_lon, min_lat, max_lon, max_lat = df_ev.iloc[0].geometry.bounds
+
+        ret_ft = self.mc.tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
+                                          storm_name=name, storm_season=year, 
+                                          format='geojson')
+        ret_ft['header']['name'] == name
+        ret_ft['header']['year'] == year
+
+        df_ft = gpd.GeoDataFrame.from_features(ret_ft)
+
+
+        import pdb
+        pdb.set_trace()
+
+
