@@ -199,10 +199,20 @@ class TestDeepcyc():
     @pytest.mark.parametrize("lat,lon", [
         (34.076463, -84.652037), 
     ])
-    def test_tctrack_big_circle(self, lat, lon):
-        ret = self.dc.tctrack_events(lat, lon, 'circle', radius_km=150)
+    def test_tctrack_max_radius(self, lat, lon):
+        """
+        Test maximum radius limitation for tctrack circle query
+        """
+        ret = self.dc.tctrack_events(lat, lon, 'circle', radius_km=180)
         df = gpd.GeoDataFrame.from_features(ret)
-        assert len(df) > 19000
+        assert len(df) > 23000
+
+        try:
+            ret = self.dc.tctrack_events(lat, lon, 'circle', radius_km=200)
+        except Exception as e:
+            err_msg = str(e)
+
+        assert err_msg == "API returned HTTP 400 with 'circle' radius exceeds max 180 km"
     
 
     @pytest.mark.parametrize("lat,lon", [

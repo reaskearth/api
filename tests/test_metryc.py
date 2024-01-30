@@ -34,7 +34,7 @@ class TestMetryc():
         assert name in list(df.name)
 
     @pytest.mark.parametrize("lats,lons,status", [
-        ([-17.6525, 30.6], [177.2634, -90.0], {'OK', 'NO CONTENT'}),
+        ([-17.6525, 30.6], [177.2634, -90.0], {'OK'}),
         ([24.0], [-93.0], {'NO CONTENT'}),
         ([30.6], [-90.0], {'OK'}),
         ([30, 24.0],[-93.0, -93.0], {'OK', 'NO CONTENT'})])
