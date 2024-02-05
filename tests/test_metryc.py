@@ -130,3 +130,56 @@ class TestMetryc():
 
         dist = geopy.distance.geodesic((clat, clon), (ilat, ilon))
         assert abs(1 - (dist.km / radius_km)) < 1e-4
+
+
+    def test_live_list(self):
+        """
+        Get listing of all live / in-season storms
+        """
+
+        ret = self.mc.live_tcwind_list()
+        assert 'Live' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) == 0
+
+
+    def test_historical_list(self):
+        """
+        Get listing of all historical storms
+        """
+
+        ret = self.mc.historical_tcwind_list()
+        assert 'Historical' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        import pdb
+        pdb.set_trace()
+
+        assert len(df) > 800
+
+
+    def test_live_footprint(self):
+        """
+        Get footprint of a live storm
+        """
+
+        ret = self.mc.live_tcwind_list()
+        assert 'Live' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) == 0
+
+
+    def test_historical_footprint(self):
+        """
+        Get footprint of a historical storm
+        """
+
+        ret = self.mc.historical_tcwind_list()
+        assert 'Historical' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) > 800
+
+

@@ -23,4 +23,16 @@ class Metryc(ApiClient):
 
         return self._call_api(params, 'metryc/tcwind/footprint')
 
+    def live_tcwind_list(self, **kwargs):
 
+        params = kwargs.copy()
+        self.logger.debug(f'Parameters: {params}')
+
+        return self._call_api(params, 'metryc/live/tcwind/list')
+
+    def historical_tcwind_list(self, **kwargs):
+
+        params = kwargs.copy()
+        self.logger.debug(f'Parameters: {params}')
+
+        return self._call_api(params, 'metryc/historical/tcwind/list')
