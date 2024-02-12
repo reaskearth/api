@@ -43,6 +43,7 @@ class TestDeepcyc():
     ])
     def test_tcwind_events(self, lat, lon):
         ret = self.dc.tcwind_events(lat, lon)
+        assert 'DeepCyc Events' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert (df.status == 'OK').all()
@@ -85,6 +86,7 @@ class TestDeepcyc():
     ])
     def test_tcwind_status(self, lats, lons, status):
         ret = self.dc.tcwind_returnvalues(lats, lons, [100], terrain_correction='open_water')
+        assert 'DeepCyc Maps' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert set(df.status) == status
@@ -118,6 +120,7 @@ class TestDeepcyc():
 
         ret1 = self.dc.tcwind_returnvalues(lats, lons, return_periods,
                                              scenario='current_climate', time_horizon='now')
+        assert 'DeepCyc Maps' in ret1['header']['product']
         if location == 'Hawaii':
             assert ret1['header']['simulation_years'] == 20500
         else:
@@ -144,6 +147,7 @@ class TestDeepcyc():
 
         ret1 = self.dc.tcwind_returnvalues(lats, lons, return_periods,
                                             scenario='current_climate', time_horizon='now')
+        assert 'DeepCyc Maps' in ret1['header']['product']
         df1 = gpd.GeoDataFrame.from_features(ret1)
         df1.sort_values(by=['cell_id', 'return_period'], inplace=True)
         assert len(df1) == len(return_periods) * num_points
@@ -166,6 +170,7 @@ class TestDeepcyc():
 
         # Use the DeepCyc client to call the API
         ret = self.dc.tcwind_returnvalues(lats, lons, return_periods)
+        assert 'DeepCyc Maps' in ret['header']['product']
 
         # Convert the results into a GeoPandas data frame
         df = gpd.GeoDataFrame.from_features(ret)
@@ -204,6 +209,7 @@ class TestDeepcyc():
         Test maximum radius limitation for tctrack circle query
         """
         ret = self.dc.tctrack_events(lat, lon, 'circle', radius_km=180)
+        assert 'DeepCyc Events' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
         assert len(df) > 23000
 
@@ -302,6 +308,7 @@ class TestDeepcyc():
     def test_tctrack_polygon(self, lats, lons):
         return_periods = [100, 200]
         ret = self.dc.tctrack_returnvalues(lats, lons, return_periods, 'polygon')
+        assert 'DeepCyc Maps' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert len(df.wind_speed) == len(return_periods)

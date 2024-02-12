@@ -9,8 +9,8 @@ from reaskapi.metryc import Metryc
 
 def df_to_dict(df):
 
-    if 'name' in df:
-        keys = [f'{name}_{year}' for name, year in zip(df.name, df.year)]
+    if 'storm_name' in df:
+        keys = [f'{name}_{year}' for name, year in zip(df.storm_name, df.storm_year)]
     else:
         keys = [f'{event_id}' for event_id in df.event_id]
 
