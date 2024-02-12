@@ -123,13 +123,13 @@ def _get_hazard(all_lats, all_lons, location_names=None,
 
     return df
 
-def get_hazard_at_resolution(all_lats, all_lons, location_names=None,
-                             terrain_correction='full_terrain_gust',
-                             wind_speed_averaging_period='3_seconds',
-                             product='deepcyc', scenario='current_climate',
-                             time_horizon='now', return_period=None, res=1):
+def get_hazard_with_resolution(all_lats, all_lons, location_names=None,
+                              terrain_correction='full_terrain_gust',
+                              wind_speed_averaging_period='3_seconds',
+                              product='deepcyc', scenario='current_climate',
+                              time_horizon='now', return_period=None, res=1):
     """
-    Get hazard at a particular resolution. The resolution units are Reask grid
+    Get hazard with a particular resolution. The resolution units are Reask grid
     cells which have sides of length (2**-7 + 2**-9) degrees.
 
     For example a resolution of 3 will be a box have side lengths:
@@ -138,7 +138,6 @@ def get_hazard_at_resolution(all_lats, all_lons, location_names=None,
     """
 
     assert (res % 2) == 1, "Only odd-numbered resolutions are supported."
-
 
     # Centre point data frame
     df_cen = _get_hazard(all_lats, all_lons,
@@ -255,13 +254,13 @@ def main():
         if location_col_name is not None:
             location_names = list(input_df[location_col_name])
 
-    df = get_hazard_at_resolution(lats, lons,
-                                 location_names,
-                                 args.terrain_correction,
-                                 args.wind_speed_averaging_period,
-                                 scenario=args.scenario, time_horizon=args.time_horizon,
-                                 product=args.product, return_period=args.return_period,
-                                 res=args.grid_cell_resolution)
+    df = get_hazard_with_resolution(lats, lons,
+                                    location_names,
+                                    args.terrain_correction,
+                                    args.wind_speed_averaging_period,
+                                    scenario=args.scenario, time_horizon=args.time_horizon,
+                                    product=args.product, return_period=args.return_period,
+                                    res=args.grid_cell_resolution)
 
     if df is not None:
         df.to_csv(args.output_filename, index_label='index')
