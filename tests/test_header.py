@@ -2,7 +2,6 @@
 import sys
 import pytest
 from pathlib import Path
-import geopandas as gpd
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from reaskapi.deepcyc import DeepCyc
@@ -15,13 +14,23 @@ TEST_LOCATIONS = [(-17.68298, 177.2756)]
 def call_all_endpoints_at_location(obj, lat, lon, **kwargs):
 
     rets = []
+    expected_product_names = []
 
     r = obj.tctrack_events(lat, lon, 'circle', radius_km=5, **kwargs)
     rets.append(r)
     r = obj.tcwind_events(lat, lon, **kwargs)
     rets.append(r)
 
-    if 'deepcyc' in obj.product.lower():
+    if 'metryc' in obj.product.lower():
+        expected_product_names = ['Metryc Historical', 'Metryc Historical']
+        r = obj.live_tcwind_list(**kwargs)
+        rets.append(r)
+        expected_product_names.append('Metryc Live')
+        r = obj.historical_tcwind_list(**kwargs)
+        rets.append(r)
+        expected_product_names.append('Metryc Historical')
+    else:
+        assert 'deepcyc' in obj.product.lower()
         r = obj.tcwind_riskscores(lat, lon, **kwargs)
         rets.append(r)
         r = obj.tcwind_returnperiods(lat, lon, 100, **kwargs)
@@ -33,7 +42,11 @@ def call_all_endpoints_at_location(obj, lat, lon, **kwargs):
         r = obj.tctrack_returnvalues(lat, lon, 100, 'circle', radius_km=5, **kwargs)
         rets.append(r)
 
-    return rets
+        expected_product_names = ['DeepCyc Events', 'DeepCyc Events', 'DeepCyc Riskscores',
+                                  'DeepCyc Maps', 'DeepCyc Maps', 'DeepCyc Maps', 'DeepCyc Maps']
+
+
+    return rets, expected_product_names
 
 
 class TestHeader:
@@ -52,15 +65,25 @@ class TestHeader:
         """
 
         tag = 'Hello World!'
-        rets = call_all_endpoints_at_location(prod, lat, lon, **{'tag': tag})
+        rets, _ = call_all_endpoints_at_location(prod, lat, lon, **{'tag': tag})
 
         if 'deepcyc' in prod.product.lower():
             assert len(rets) == 7
         else:
-            assert len(rets) == 2
+            assert len(rets) == 4
 
         for r in rets:
-            if r['header']['tag'] != tag:
-                import pdb
-                pdb.set_trace()
             assert r['header']['tag'] == tag
+
+
+    @pytest.mark.parametrize("lat,lon", TEST_LOCATIONS)
+    @pytest.mark.parametrize("prod", [mc, dc])
+    def test_product(self, prod, lat, lon):
+        """
+        Check that the correct product is returned on all endpoints
+        """
+
+        rets, expected_prods = call_all_endpoints_at_location(prod, lat, lon)
+
+        for ret, prod in zip(rets, expected_prods):
+            assert prod in ret['header']['product']

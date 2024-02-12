@@ -9,7 +9,8 @@ from reaskapi.auth import get_access_token
 URL_MAX_BYTES = 2**15
 
 
-DEFAULT_BASE_URL = 'https://api.reask.earth/v2'
+#DEFAULT_BASE_URL = 'https://api.reask.earth/v2'
+DEFAULT_BASE_URL = 'https://api.reask.earth/dev'
 DEFAULT_CONFIG_SECTION = 'default'
 
 @dataclass
@@ -22,6 +23,13 @@ class ClientConfig:
 
 class ApiClient:
     logger = logging.getLogger(__name__)
+
+    deprecated_args = {
+        'name': 'storm_name',
+        'year': 'storm_year',
+        'season': 'storm_year',
+        'storm_season': 'storm_year'
+    }
 
     def __init__(self, product, config_section='default'):
         """
@@ -90,10 +98,16 @@ class ApiClient:
         return self._call_api(params, f'{self.product.lower()}/tctrack/central_pressure/events')
 
 
-    def _call_api(self, params, endpoint):
+    def _call_api(self, param_args, endpoint):
         """
         Base method to send authenticated calls to the API HTTP endpoints
         """
+
+        # Normalise/fix deprecated parameters
+        params = param_args.copy()
+        for k in param_args.keys():
+            if k in self.deprecated_args.keys():
+                params[k] = self.deprecated_args[k]
 
         url = f'{self.base_url}/{endpoint}'
 

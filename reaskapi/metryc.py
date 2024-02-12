@@ -14,12 +14,19 @@ class Metryc(ApiClient):
 
     def __tcwind_footprint(self, subproduct, min_lat, max_lat, min_lon, max_lon, **kwargs):
 
+        return self.historical_tcwind_footprint(self, min_lat, max_lat, min_lon, max_lon, kwargs)
+
+
+    def live_tcwind_footprint(self, min_lat, max_lat, min_lon, max_lon, **kwargs):
+
         params = kwargs.copy()
         params['min_lat'] = min_lat
         params['max_lat'] = max_lat
         params['min_lon'] = min_lon
         params['max_lon'] = max_lon
+
         self.logger.debug(f'Parameters: {params}')
+        return self._call_api(params, 'metryc/live/tcwind/footprint')
 
         return self._call_api(params, f'metryc/{subproduct}/tcwind/footprint')
 
@@ -37,14 +44,10 @@ class Metryc(ApiClient):
 
     def live_tcwind_list(self, **kwargs):
 
-        params = kwargs.copy()
-        self.logger.debug(f'Parameters: {params}')
-
-        return self._call_api(params, 'metryc/live/tcwind/list')
+        self.logger.debug(f'Parameters: {kwargs}')
+        return self._call_api(kwargs, 'metryc/live/tcwind/list')
 
     def historical_tcwind_list(self, **kwargs):
 
-        params = kwargs.copy()
-        self.logger.debug(f'Parameters: {params}')
-
-        return self._call_api(params, 'metryc/historical/tcwind/list')
+        self.logger.debug(f'Parameters: {kwargs}')
+        return self._call_api(kwargs, 'metryc/historical/tcwind/list')
