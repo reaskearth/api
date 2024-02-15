@@ -4,7 +4,7 @@ import argparse
 import pandas as pd
 import numpy as np
 from math import ceil
-from shapely import Polygon
+from shapely import Polygon, union_all
 from pathlib import Path
 import geopandas as gpd
 
@@ -29,7 +29,7 @@ def convert_open_water_1minute_to_10minute(df):
     assert all(df['terrain_correction'] == 'open_water'), \
         'Can only convert to 10 minutes wind speed averaging over water'
 
-    df['wind_speed'] = df['wind_speed'] * 0.9
+    df['wind_speed'] = df['wind_speed'] * (1 / 1.05)
     df['wind_speed_averaging_period'] = '10_minutes'
 
     return df
@@ -127,7 +127,8 @@ def get_hazard_with_resolution(all_lats, all_lons, location_names=None,
                               terrain_correction='full_terrain_gust',
                               wind_speed_averaging_period='3_seconds',
                               product='deepcyc', scenario='current_climate',
-                              time_horizon='now', return_period=None, res=1):
+                              time_horizon='now', return_period=None, regrid_res=1,
+                              regrid_op='mean'):
     """
     Get hazard with a particular resolution. The resolution units are Reask grid
     cells which have sides of length (2**-7 + 2**-9) degrees.
@@ -137,7 +138,7 @@ def get_hazard_with_resolution(all_lats, all_lons, location_names=None,
     3*(2**-7 + 2**-9) degress ~= 3.2km x 3.2 km at the equator.
     """
 
-    assert (res % 2) == 1, "Only odd-numbered resolutions are supported."
+    assert (regrid_res % 2) == 1, "Only odd-numbered resolutions are supported."
 
     # Centre point data frame
     df_cen = _get_hazard(all_lats, all_lons,
@@ -147,15 +148,15 @@ def get_hazard_with_resolution(all_lats, all_lons, location_names=None,
                          scenario=scenario, time_horizon=time_horizon,
                          product=product, return_period=return_period)
 
-    if res > 1:
+    if regrid_res > 1:
         # Offset lats, lons to lower left corner of target resolution
-        ll_lats = all_lats - (np.floor(res / 2)*RKG_RES)
-        ll_lons = all_lons - (np.floor(res / 2)*RKG_RES)
+        ll_lats = all_lats - (np.floor(regrid_res / 2)*RKG_RES)
+        ll_lons = all_lons - (np.floor(regrid_res / 2)*RKG_RES)
 
         dfs = []
         dfs_ws = []
-        for j in range(res):
-            for i in range(res):
+        for j in range(regrid_res):
+            for i in range(regrid_res):
                 tmp_lats = ll_lats + j*RKG_RES
                 tmp_lons = ll_lons + i*RKG_RES
                 df = _get_hazard(tmp_lats, tmp_lons, location_names,
@@ -166,19 +167,36 @@ def get_hazard_with_resolution(all_lats, all_lons, location_names=None,
                 dfs.append(df)
                 dfs_ws.append(df[['location_name', 'wind_speed']])
 
-        # FIXME: do some checks to make sure the geometry corners are as expected
+        # Checks that we got neighbouring cells that fit inside a square
+        test_polys = [dfs[i].sort_values('cell_id').iloc[0].geometry for i in range(len(dfs))]
+        test_cell = union_all(test_polys)
+        assert test_cell.area == (RKG_RES*regrid_res)**2, "Error in regridding, wrong area."
+        min_lon, min_lat, max_lon, max_lat = test_cell.bounds
+        assert max_lat - min_lat == regrid_res*RKG_RES, "Error in regridding, wrong dlat."
+        assert max_lon - min_lon == regrid_res*RKG_RES, "Error in regridding, wrong dlon."
+
         df = pd.concat(dfs)
 
         # Get mean of wind speed across locations and replace center cell wind speed
-        df_ws = pd.concat(dfs_ws).groupby('location_name').mean().rename(columns={'wind_speed': 'mean_wind_speed'})
+        if regrid_op == 'mean':
+            df_ws = pd.concat(dfs_ws).groupby('location_name').mean()
+        elif regird_op == 'median':
+            df_ws = pd.concat(dfs_ws).groupby('location_name').median()
+        else:
+            assert regird_op == 'max'
+            df_ws = pd.concat(dfs_ws).groupby('location_name').max()
+
+        df_ws.rename(columns={'wind_speed': 'regridded_wind_speed'}, inplace=True)
+
         df_cen = df_cen.join(df_ws, on='location_name')
 
         df_cen.drop(['wind_speed'], axis=1, inplace=True)
-        df_cen.rename(columns={'mean_wind_speed': 'wind_speed', 'cell_id': 'center_cell_id'}, inplace=True)
+        df_cen.rename(columns={'regridded_wind_speed': 'wind_speed', 'cell_id': 'center_cell_id'}, inplace=True)
 
     # Add/remove some columns
-    df_cen['resolution_deg'] = RKG_RES*res
+    df_cen['resolution_deg'] = RKG_RES*regrid_res
     df_cen.drop(['geometry'], axis=1, inplace=True)
+    df_cen.drop(['status'], axis=1, inplace=True)
     df_cen.sort_values('location_name', inplace=True)
 
     return df_cen
@@ -187,8 +205,8 @@ def get_hazard_with_resolution(all_lats, all_lons, location_names=None,
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--output_filename', required=True,
-                        help="Name of the output CSV file.")
+    parser.add_argument('--output_filename', required=False, default=None,
+                        help="Name of the output CSV file, otherwise output to stdout")
     parser.add_argument('--product', required=False, default='DeepCyc',
                         help="Name of the product to query. DeepCyc or Metryc.")
     parser.add_argument('--location_csv', required=False, default=None,
@@ -208,15 +226,20 @@ def main():
                         help="Terrain correction should be 'full_terrain_gust', 'open_water', 'open_terrain', 'all_open_terrain'")
     parser.add_argument('--wind_speed_averaging_period', required=False,
                          default='3_seconds')
-    parser.add_argument('--grid_cell_resolution', required=False, default=1, type=int,
-                         help="The resolution of returned values in units of (2**-7 + 2**-9) degrees")
+    parser.add_argument('--regrid_resolution', required=False, default=1, type=int,
+                         help="The regridding resolution of in units of (2**-7 + 2**-9) degrees. Must be an odd number.")
+    parser.add_argument('--regrid_operation', required=False, default='mean', type=str,
+                         help="The of operation used to regrid to a selected resolution. Supports: 'mean', 'median' or 'max'")
+    parser.add_argument('--noheader', required=False, action='store_true', default=False,
+                         help="Don't add CSV header line to output")
+
 
     args = parser.parse_args()
 
     assert args.scenario in ['current_climate', 'SSP1-2.6', 'SSP2-4.5', 'SSP5-8.5']
     assert args.time_horizon in ['now', '2035', '2050', '2065', '2080']
 
-    if Path(args.output_filename).exists():
+    if args.output_filename is not None and Path(args.output_filename).exists():
         print(f'Error: output file {args.output_filename} already exists.', file=sys.stderr)
         return 1
 
@@ -260,10 +283,17 @@ def main():
                                     args.wind_speed_averaging_period,
                                     scenario=args.scenario, time_horizon=args.time_horizon,
                                     product=args.product, return_period=args.return_period,
-                                    res=args.grid_cell_resolution)
+                                    regrid_res=args.regrid_resolution,
+                                    regrid_op=args.regrid_operation)
+
 
     if df is not None:
-        df.to_csv(args.output_filename, index_label='index')
+        if args.output_filename is not None:
+            # Output to file
+            df.to_csv(args.output_filename, index=False, index_label='index', header=not args.noheader)
+        else:
+            # Output to stdout
+            df.to_csv(sys.stdout, index=False, index_label='index', header=not args.noheader)
         return 0
     else:
         return 1
