@@ -227,9 +227,9 @@ def main():
     parser.add_argument('--wind_speed_averaging_period', required=False,
                          default='3_seconds')
     parser.add_argument('--regrid_resolution', required=False, default=1, type=int,
-                         help="The regridding resolution of in units of (2**-7 + 2**-9) degrees. Must be an odd number.")
+                         help="The regridding resolution in units of (2**-7 + 2**-9) degrees. Must be an odd number.")
     parser.add_argument('--regrid_operation', required=False, default='mean', type=str,
-                         help="The of operation used to regrid to a selected resolution. Supports: 'mean', 'median' or 'max'")
+                         help="The of operation used to regrid to a new resolution. Supports: 'mean', 'median' or 'max'")
     parser.add_argument('--noheader', required=False, action='store_true', default=False,
                          help="Don't add CSV header line to output")
 
