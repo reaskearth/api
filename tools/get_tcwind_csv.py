@@ -123,19 +123,25 @@ def _get_hazard(all_lats, all_lons, location_names=None,
 
     return df
 
-def get_hazard_with_resolution(all_lats, all_lons, location_names=None,
+def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_names=None,
                               terrain_correction='full_terrain_gust',
                               wind_speed_averaging_period='3_seconds',
                               product='deepcyc', scenario='current_climate',
                               time_horizon='now', return_period=None, regrid_res=1,
-                              regrid_op='mean'):
+                              regrid_op='mean', halo_size=None):
     """
-    Get hazard with a particular resolution. The resolution units are Reask grid
-    cells which have sides of length (2**-7 + 2**-9) degrees.
+    Get hazard with a particular resolution or with a halo.
 
-    For example a resolution of 3 will be a box have side lengths:
+    The resolution units are Reask grid cells which have sides of length (2**-7
+    + 2**-9) degrees. For example a resolution of 3 will be a box have side
+    lengths:
 
     3*(2**-7 + 2**-9) degress ~= 3.2km x 3.2 km at the equator.
+
+    The halo units are number of grid cells surrounding the point of interest.
+    For example a halo of 1 will add a 1 grid cell layer around the centre
+    point resulting in 9 new cells being returned. A halo of 2 would be
+    (2*2 + 1)^2 = 25 cells
     """
 
     assert (regrid_res % 2) == 1, "Only odd-numbered resolutions are supported."
@@ -148,15 +154,20 @@ def get_hazard_with_resolution(all_lats, all_lons, location_names=None,
                          scenario=scenario, time_horizon=time_horizon,
                          product=product, return_period=return_period)
 
-    if regrid_res > 1:
-        # Offset lats, lons to lower left corner of target resolution
-        ll_lats = all_lats - (np.floor(regrid_res / 2)*RKG_RES)
-        ll_lons = all_lons - (np.floor(regrid_res / 2)*RKG_RES)
+    if regrid_res > 1 or halo_size is not None:
+        # Offset lats, lons to lower left corner
+        if halo_size is not None:
+            side_len = halo_size*2 + 1
+        else:
+            side_len = regrid_res
+
+        ll_lats = all_lats - (np.floor(side_len / 2)*RKG_RES)
+        ll_lons = all_lons - (np.floor(side_len / 2)*RKG_RES)
 
         dfs = []
         dfs_ws = []
-        for j in range(regrid_res):
-            for i in range(regrid_res):
+        for j in range(side_len):
+            for i in range(side_len):
                 tmp_lats = ll_lats + j*RKG_RES
                 tmp_lons = ll_lons + i*RKG_RES
                 df = _get_hazard(tmp_lats, tmp_lons, location_names,
@@ -170,28 +181,32 @@ def get_hazard_with_resolution(all_lats, all_lons, location_names=None,
         # Checks that we got neighbouring cells that fit inside a square
         test_polys = [dfs[i].sort_values('cell_id').iloc[0].geometry for i in range(len(dfs))]
         test_cell = union_all(test_polys)
-        assert test_cell.area == (RKG_RES*regrid_res)**2, "Error in regridding, wrong area."
+        assert test_cell.area == (RKG_RES*side_len)**2, "Error in regridding, wrong area."
         min_lon, min_lat, max_lon, max_lat = test_cell.bounds
-        assert max_lat - min_lat == regrid_res*RKG_RES, "Error in regridding, wrong dlat."
-        assert max_lon - min_lon == regrid_res*RKG_RES, "Error in regridding, wrong dlon."
+        assert max_lat - min_lat == side_len*RKG_RES, "Error in regridding, wrong dlat."
+        assert max_lon - min_lon == side_len*RKG_RES, "Error in regridding, wrong dlon."
 
-        df = pd.concat(dfs)
-
-        # Get mean of wind speed across locations and replace center cell wind speed
-        if regrid_op == 'mean':
-            df_ws = pd.concat(dfs_ws).groupby('location_name').mean()
-        elif regird_op == 'median':
-            df_ws = pd.concat(dfs_ws).groupby('location_name').median()
+        if halo_size is not None:
+            df_cen = pd.concat(dfs)
+            assert len(df_cen) == len(all_lats)*side_len**2
         else:
-            assert regird_op == 'max'
-            df_ws = pd.concat(dfs_ws).groupby('location_name').max()
+            assert regrid_res > 1
 
-        df_ws.rename(columns={'wind_speed': 'regridded_wind_speed'}, inplace=True)
+            # Get mean of wind speed across locations and replace center cell wind speed
+            if regrid_op == 'mean':
+                df_ws = pd.concat(dfs_ws).groupby('location_name').mean()
+            elif regird_op == 'median':
+                df_ws = pd.concat(dfs_ws).groupby('location_name').median()
+            else:
+                assert regrid_op == 'max'
+                df_ws = pd.concat(dfs_ws).groupby('location_name').max()
 
-        df_cen = df_cen.join(df_ws, on='location_name')
+            df_ws.rename(columns={'wind_speed': 'regridded_wind_speed'}, inplace=True)
 
-        df_cen.drop(['wind_speed'], axis=1, inplace=True)
-        df_cen.rename(columns={'regridded_wind_speed': 'wind_speed', 'cell_id': 'center_cell_id'}, inplace=True)
+            df_cen = df_cen.join(df_ws, on='location_name')
+
+            df_cen.drop(['wind_speed'], axis=1, inplace=True)
+            df_cen.rename(columns={'regridded_wind_speed': 'wind_speed', 'cell_id': 'center_cell_id'}, inplace=True)
 
     # Add/remove some columns
     df_cen['resolution_deg'] = RKG_RES*regrid_res
@@ -230,6 +245,8 @@ def main():
                          help="The regridding resolution in units of (2**-7 + 2**-9) degrees. Must be an odd number.")
     parser.add_argument('--regrid_operation', required=False, default='mean', type=str,
                          help="The of operation used to regrid to a new resolution. Supports: 'mean', 'median' or 'max'")
+    parser.add_argument('--halo_size', required=False, default=None, type=int,
+                         help="Put a halo of <size> grid cells around the requested locations.")
     parser.add_argument('--noheader', required=False, action='store_true', default=False,
                          help="Don't add CSV header line to output")
 
@@ -238,6 +255,10 @@ def main():
 
     assert args.scenario in ['current_climate', 'SSP1-2.6', 'SSP2-4.5', 'SSP5-8.5']
     assert args.time_horizon in ['now', '2035', '2050', '2065', '2080']
+    assert (args.regrid_resolution >= 1) and (args.regrid_resolution % 2 == 1), \
+        'Regrid resolution must be odd and >= 1'
+    if args.halo_size is not None:
+        assert args.regrid_resolution == 1, "Halo and regrid options can't be used together"
 
     if args.output_filename is not None and Path(args.output_filename).exists():
         print(f'Error: output file {args.output_filename} already exists.', file=sys.stderr)
@@ -277,14 +298,13 @@ def main():
         if location_col_name is not None:
             location_names = list(input_df[location_col_name])
 
-    df = get_hazard_with_resolution(lats, lons,
-                                    location_names,
-                                    args.terrain_correction,
-                                    args.wind_speed_averaging_period,
-                                    scenario=args.scenario, time_horizon=args.time_horizon,
-                                    product=args.product, return_period=args.return_period,
-                                    regrid_res=args.regrid_resolution,
-                                    regrid_op=args.regrid_operation)
+    df = get_hazard_with_resolution_or_halo(lats, lons,
+            location_names, args.terrain_correction, args.wind_speed_averaging_period,
+            scenario=args.scenario, time_horizon=args.time_horizon,
+            product=args.product, return_period=args.return_period,
+            regrid_res=args.regrid_resolution,
+            regrid_op=args.regrid_operation,
+            halo_size=args.halo_size)
 
 
     if df is not None:
