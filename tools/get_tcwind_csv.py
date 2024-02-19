@@ -14,7 +14,7 @@ from reaskapi.metryc import Metryc
 
 LAT_NAMES = ['latitude', 'Latitude', 'lat', 'Lat']
 LON_NAMES = ['longitude', 'Longitude', 'lon', 'Lon']
-LOCATION_NAMES = ['location', 'Location', 'locationName']
+LOCATION_IDS = ['location_id', 'location', 'Location', 'locationName']
 RKG_RES = 2**-7 + 2**-9
 
 def convert_open_water_1minute_to_10minute(df):
@@ -35,15 +35,15 @@ def convert_open_water_1minute_to_10minute(df):
     return df
 
 
-def _get_hazard(all_lats, all_lons, location_names=None,
+def _get_hazard(all_lats, all_lons, location_ids=None,
                 terrain_correction='full_terrain_gust',
                 wind_speed_averaging_period='3_seconds',
                 product='deepcyc', scenario='current_climate',
                 time_horizon='now', return_period=None):
 
     assert len(all_lats) == len(all_lons), 'Mismatching number of lats and lons'
-    if location_names is not None:
-        assert len(all_lats) == len(location_names)
+    if location_ids is not None:
+        assert len(all_lats) == len(location_ids)
 
     num_calls = ceil(len(all_lats) / 100)
     if return_period is None and product.lower() == 'deepcyc':
@@ -102,8 +102,8 @@ def _get_hazard(all_lats, all_lons, location_names=None,
 
     # Do a spatial join to attach the query locations and location names
     tmp = {'lat': all_lats, 'lon': all_lons}
-    if location_names is not None:
-        tmp['location_name'] = location_names
+    if location_ids is not None:
+        tmp['location_id'] = location_ids
 
     df_locs = gpd.GeoDataFrame(tmp, geometry=gpd.points_from_xy(all_lons, all_lats), crs="EPSG:4326")
     df = df.set_crs(4326).sjoin(df_locs, predicate="contains")
@@ -123,7 +123,7 @@ def _get_hazard(all_lats, all_lons, location_names=None,
 
     return df
 
-def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_names=None,
+def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
                               terrain_correction='full_terrain_gust',
                               wind_speed_averaging_period='3_seconds',
                               product='deepcyc', scenario='current_climate',
@@ -148,7 +148,7 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_names=None,
 
     # Centre point data frame
     df_cen = _get_hazard(all_lats, all_lons,
-                         location_names,
+                         location_ids,
                          terrain_correction=terrain_correction,
                          wind_speed_averaging_period=wind_speed_averaging_period,
                          scenario=scenario, time_horizon=time_horizon,
@@ -170,13 +170,13 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_names=None,
             for i in range(side_len):
                 tmp_lats = ll_lats + j*RKG_RES
                 tmp_lons = ll_lons + i*RKG_RES
-                df = _get_hazard(tmp_lats, tmp_lons, location_names,
+                df = _get_hazard(tmp_lats, tmp_lons, location_ids,
                                  terrain_correction=terrain_correction,
                                  wind_speed_averaging_period=wind_speed_averaging_period,
                                  scenario=scenario, time_horizon=time_horizon,
                                  product=product, return_period=return_period)
                 dfs.append(df)
-                dfs_ws.append(df[['location_name', 'wind_speed']])
+                dfs_ws.append(df[['location_id', 'wind_speed']])
 
         # Checks that we got neighbouring cells that fit inside a square
         test_polys = [dfs[i].sort_values('cell_id').iloc[0].geometry for i in range(len(dfs))]
@@ -194,25 +194,34 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_names=None,
 
             # Get mean of wind speed across locations and replace center cell wind speed
             if regrid_op == 'mean':
-                df_ws = pd.concat(dfs_ws).groupby('location_name').mean()
+                df_ws = pd.concat(dfs_ws).groupby('location_id').mean()
             elif regird_op == 'median':
-                df_ws = pd.concat(dfs_ws).groupby('location_name').median()
+                df_ws = pd.concat(dfs_ws).groupby('location_id').median()
             else:
                 assert regrid_op == 'max'
-                df_ws = pd.concat(dfs_ws).groupby('location_name').max()
+                df_ws = pd.concat(dfs_ws).groupby('location_id').max()
 
             df_ws.rename(columns={'wind_speed': 'regridded_wind_speed'}, inplace=True)
 
-            df_cen = df_cen.join(df_ws, on='location_name')
+            df_cen = df_cen.join(df_ws, on='location_id')
 
             df_cen.drop(['wind_speed'], axis=1, inplace=True)
             df_cen.rename(columns={'regridded_wind_speed': 'wind_speed', 'cell_id': 'center_cell_id'}, inplace=True)
 
     # Add/remove some columns
-    df_cen['resolution_deg'] = RKG_RES*regrid_res
+    if regrid_res > 1:
+        df_cen['resolution_deg'] = RKG_RES*regrid_res
     df_cen.drop(['geometry'], axis=1, inplace=True)
     df_cen.drop(['status'], axis=1, inplace=True)
-    df_cen.sort_values('location_name', inplace=True)
+    if 'location_id' in df_cen:
+        df_cen.sort_values('location_id', inplace=True)
+
+    df_cen = df_cen.dropna()
+
+    # FIXME: see API-108: API can return "best effort" return period for
+    # location with very low risk.
+    if return_period is not None:
+        df_cen = df_cen[df_cen.return_period == return_period]
 
     return df_cen
 
@@ -289,23 +298,22 @@ def main():
         lats = list(input_df[lat_col_name])
         lons = list(input_df[lon_col_name])
 
-        location_col_name = None
-        for tmp_name in LOCATION_NAMES:
+        location_id_col = None
+        for tmp_name in LOCATION_IDS:
             if tmp_name in input_df.columns:
-                location_col_name = tmp_name
+                location_id_col= tmp_name
 
-        location_names = None
-        if location_col_name is not None:
-            location_names = list(input_df[location_col_name])
+        location_ids = None
+        if location_id_col is not None:
+            location_ids = list(input_df[location_id_col])
 
     df = get_hazard_with_resolution_or_halo(lats, lons,
-            location_names, args.terrain_correction, args.wind_speed_averaging_period,
+            location_ids, args.terrain_correction, args.wind_speed_averaging_period,
             scenario=args.scenario, time_horizon=args.time_horizon,
             product=args.product, return_period=args.return_period,
             regrid_res=args.regrid_resolution,
             regrid_op=args.regrid_operation,
             halo_size=args.halo_size)
-
 
     if df is not None:
         if args.output_filename is not None:
