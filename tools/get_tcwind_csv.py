@@ -170,6 +170,10 @@ def _get_hazard(all_lats, all_lons, location_ids=None,
                                   product, scenario,
                                   time_horizon, return_period)
 
+    # FIXME: API-112 we may get duplicates if there is more than one query
+    # within the same grid cell.
+    df = df.drop_duplicates()
+
     # Do a spatial join to attach the query locations and location names
     tmp_df = pd.DataFrame({'lat': all_lats, 'lon': all_lons})
     if location_ids is not None:
@@ -182,6 +186,9 @@ def _get_hazard(all_lats, all_lons, location_ids=None,
 
     if convert_to_10_minute:
         df = convert_open_water_1minute_to_10minute(df)
+
+    if location_ids is not None:
+        assert set(df[location_ids.name]) == set(location_ids)
 
     return df
 
