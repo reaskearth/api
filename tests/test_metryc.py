@@ -141,7 +141,7 @@ class TestMetryc():
         assert 'Live' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
-        assert len(df) == 0
+        assert len(df) == 1
 
 
     def test_historical_list(self):
@@ -153,33 +153,38 @@ class TestMetryc():
         assert 'Historical' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
-        import pdb
-        pdb.set_trace()
-
         assert len(df) > 800
 
 
-    def test_live_footprint(self):
+    @pytest.mark.parametrize("product", [
+        'Live', 
+        'Historical'
+    ])
+    def test_footprint(self, product):
         """
         Get footprint of a live storm
         """
 
-        ret = self.mc.live_tcwind_list()
-        assert 'Live' in ret['header']['product']
+        if product == 'Live':
+            ret = self.mc.live_tcwind_list()
+        else:
+            ret = self.mc.historical_tcwind_list()
+
+        assert product in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
-        assert len(df) == 0
+        row = df.iloc[0]
+        min_lon, min_lat, max_lon, max_lat = row.geometry.bounds
 
+        if product == 'Live':
+            ret = self.mc.live_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
+                                                storm_name=row.storm_name,
+                                                storm_year=row.storm_year)
+        else:
+            ret = self.mc.historical_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
+                                                      storm_name=row.storm_name,
+                                                      storm_season=row.storm_year)
 
-    def test_historical_footprint(self):
-        """
-        Get footprint of a historical storm
-        """
-
-        ret = self.mc.historical_tcwind_list()
-        assert 'Historical' in ret['header']['product']
-        df = gpd.GeoDataFrame.from_features(ret)
-
-        assert len(df) > 800
-
-
+        assert ret['header']['name'] == row.storm_name
+        assert ret['header']['year'] == row.storm_year
+        assert len(ret['features']) > 1000
