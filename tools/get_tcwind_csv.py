@@ -1,5 +1,6 @@
 
 import sys
+import time
 import argparse
 import pandas as pd
 import numpy as np
@@ -12,9 +13,9 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from reaskapi.deepcyc import DeepCyc
 from reaskapi.metryc import Metryc
 
-LAT_NAMES = ['latitude', 'Latitude', 'lat', 'Lat']
-LON_NAMES = ['longitude', 'Longitude', 'lon', 'Lon']
-LOCATION_IDS = ['location_id', 'location', 'Location', 'locationName']
+LAT_NAMES = ['latitude', 'Latitude', 'lat', 'Lat', 'latitude_nr']
+LON_NAMES = ['longitude', 'Longitude', 'lon', 'Lon', 'longitude_nr']
+LOCATION_IDS = ['unique_id', 'location_id', 'location', 'Location', 'locationName']
 RKG_RES = 2**-7 + 2**-9
 
 def convert_open_water_1minute_to_10minute(df):
@@ -35,36 +36,38 @@ def convert_open_water_1minute_to_10minute(df):
     return df
 
 
-def _get_hazard(all_lats, all_lons, location_ids=None,
-                terrain_correction='full_terrain_gust',
-                wind_speed_averaging_period='3_seconds',
-                product='deepcyc', scenario='current_climate',
-                time_horizon='now', return_period=None):
 
-    assert len(all_lats) == len(all_lons), 'Mismatching number of lats and lons'
-    if location_ids is not None:
-        assert len(all_lats) == len(location_ids)
-
-    num_calls = ceil(len(all_lats) / 100)
-    if return_period is None and product.lower() == 'deepcyc':
-        # We are pulling the full stochastic history - do one lat, lon pair at a time.
-        num_calls = len(all_lats)
+def _do_queries_serially(all_lats, all_lons,
+                         terrain_correction,
+                         wind_speed_averaging_period,
+                         product, scenario,
+                         time_horizon, return_period):
 
     if product.lower() == 'deepcyc':
         m = DeepCyc()
     else:
         m = Metryc()
 
-    convert_to_10_minute = False
-    if wind_speed_averaging_period == '10_minutes':
-        convert_to_10_minute = True
-        wind_speed_averaging_period = '1_minute'
-        assert terrain_correction == 'open_water', \
-            '10 minutes wind speed averaging period only supported for Open Water terrain type.'
+    num_calls = ceil(len(all_lats) / 100)
+    if return_period is None and product.lower() == 'deepcyc':
+        # We are pulling the full stochastic history - do one lat, lon pair at a time.
+        num_calls = len(all_lats)
 
-    df = None
+    token_age = 0
+    start_time = time.time()
+    all_query_dfs = []
     for lats, lons in zip(np.array_split(all_lats, num_calls),
                           np.array_split(all_lons, num_calls)):
+
+        token_age = time.time() - start_time
+        if token_age > 3600:
+            if product.lower() == 'deepcyc':
+                m = DeepCyc()
+            else:
+                m = Metryc()
+
+            start_time = time.time()
+            token_age = 0
 
         if m.product == 'Metryc':
             ret = m.tcwind_events(lats, lons,
@@ -87,41 +90,101 @@ def _get_hazard(all_lats, all_lons, location_ids=None,
                 assert ret['header']['scenario'] == scenario
                 assert ret['header']['time_horizon'] == time_horizon
 
-        if not ret:
-            return None
-
         assert product in ret['header']['product']
         assert ret['header']['terrain_correction'] == terrain_correction
         assert ret['header']['wind_speed_averaging_period'] == wind_speed_averaging_period
 
-        if df is None:
-            df = gpd.GeoDataFrame.from_features(ret)
-        else:
-            tmp_df = gpd.GeoDataFrame.from_features(ret)
-            df = pd.concat((df, tmp_df), ignore_index=True)
+        df = gpd.GeoDataFrame.from_features(ret)
+        df['wind_speed_averaging_period'] = ret['header']['wind_speed_averaging_period']
+        df['terrain_correction'] = ret['header']['terrain_correction']
+
+        # Fix up some additional columns
+        if product.lower() == 'DeepCyc':
+            df['scenario'] = ret['header']['scenario']
+            df['time_horizon'] = ret['header']['time_horizon']
+            df['simulation_years'] = ret['header']['simulation_years']
+
+        df.rename(columns={'wind_speed': 'wind_speed_{}'.format(ret['header']['wind_speed_units'])}, inplace=True)
+        all_query_dfs.append(df)
+
+    df = pd.concat(all_query_dfs, ignore_index=True)
+
+    return df
+
+
+def _do_queries_in_parallel(all_lats, all_lons,
+                             terrain_correction,
+                             wind_speed_averaging_period,
+                             product, scenario,
+                             time_horizon, return_period):
+
+    import multiprocessing as mp
+    from itertools import repeat
+
+    num_calls = ceil(len(all_lats) / 1000)
+    lats = np.array_split(all_lats, num_calls)
+    lons = np.array_split(all_lons, num_calls)
+
+    with mp.Pool(8) as pool:
+        dfs = pool.starmap(_do_queries_serially,
+                            zip(lats, lons,
+                               repeat(terrain_correction),
+                               repeat(wind_speed_averaging_period),
+                               repeat(product),
+                               repeat(scenario),
+                               repeat(time_horizon),
+                               repeat(return_period)))
+
+    df = pd.concat(dfs, ignore_index=True)
+    return df
+
+
+def _get_hazard(all_lats, all_lons, location_ids=None,
+                terrain_correction='full_terrain_gust',
+                wind_speed_averaging_period='3_seconds',
+                product='deepcyc', scenario='current_climate',
+                time_horizon='now', return_period=None):
+
+    assert len(all_lats) == len(all_lons), 'Mismatching number of lats and lons'
+    if location_ids is not None:
+        assert len(all_lats) == len(location_ids)
+
+    convert_to_10_minute = False
+    if wind_speed_averaging_period == '10_minutes':
+        convert_to_10_minute = True
+        wind_speed_averaging_period = '1_minute'
+        assert terrain_correction == 'open_water', \
+            '10 minutes wind speed averaging period only supported for Open Water terrain type.'
+
+    do_parallel = True
+    if do_parallel:
+        df = _do_queries_in_parallel(all_lats, all_lons,
+                                     terrain_correction,
+                                     wind_speed_averaging_period,
+                                     product, scenario,
+                                     time_horizon, return_period)
+    else:
+        df = _do_queries_serially(all_lats, all_lons,
+                                  terrain_correction,
+                                  wind_speed_averaging_period,
+                                  product, scenario,
+                                  time_horizon, return_period)
 
     # Do a spatial join to attach the query locations and location names
-    tmp = {'lat': all_lats, 'lon': all_lons}
+    tmp_df = pd.DataFrame({'lat': all_lats, 'lon': all_lons})
     if location_ids is not None:
-        tmp['location_id'] = location_ids
+        tmp_df[location_ids.name] = list(location_ids)
+        tmp_df.set_index(location_ids.name)
 
-    df_locs = gpd.GeoDataFrame(tmp, geometry=gpd.points_from_xy(all_lons, all_lats), crs="EPSG:4326")
-    df = df.set_crs(4326).sjoin(df_locs, predicate="contains")
+    df_locs = gpd.GeoDataFrame(tmp_df, geometry=gpd.points_from_xy(all_lons, all_lats), crs="EPSG:4326")
+    df = df.set_crs(4326).sjoin(df_locs, predicate="intersects")
     df.drop(['index_right'], axis=1, inplace=True)
-
-    # Fix up some additional columns
-    if m.product == 'DeepCyc':
-        df['scenario'] = ret['header']['scenario']
-        df['time_horizon'] = ret['header']['time_horizon']
-        df['simulation_years'] = ret['header']['simulation_years']
-
-    df['wind_speed_averaging_period'] = ret['header']['wind_speed_averaging_period']
-    df['terrain_correction'] = ret['header']['terrain_correction']
 
     if convert_to_10_minute:
         df = convert_open_water_1minute_to_10minute(df)
 
     return df
+
 
 def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
                               terrain_correction='full_terrain_gust',
@@ -212,11 +275,6 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
     if regrid_res > 1:
         df_cen['resolution_deg'] = RKG_RES*regrid_res
     df_cen.drop(['geometry'], axis=1, inplace=True)
-    df_cen.drop(['status'], axis=1, inplace=True)
-    if 'location_id' in df_cen:
-        df_cen.sort_values('location_id', inplace=True)
-
-    df_cen = df_cen.dropna()
 
     # FIXME: see API-108: API can return "best effort" return period for
     # location with very low risk.
@@ -295,6 +353,9 @@ def main():
         assert lat_col_name is not None
         assert lon_col_name is not None
 
+        # FIXME: API-109 better handling on NaN values at server-side
+        input_df = input_df[input_df[lat_col_name].notna() & input_df[lon_col_name].notna()]
+
         lats = list(input_df[lat_col_name])
         lons = list(input_df[lon_col_name])
 
@@ -305,7 +366,9 @@ def main():
 
         location_ids = None
         if location_id_col is not None:
-            location_ids = list(input_df[location_id_col])
+            location_ids = input_df[location_id_col]
+            assert len(location_ids) == len(location_ids.unique()), \
+                'Location ids are not unique'
 
     df = get_hazard_with_resolution_or_halo(lats, lons,
             location_ids, args.terrain_correction, args.wind_speed_averaging_period,
