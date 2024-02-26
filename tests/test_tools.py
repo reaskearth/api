@@ -9,6 +9,7 @@ import subprocess as sp
 
 class TestTools:
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason='Temp file is not writable on Windows')
     @pytest.mark.parametrize("product", ['Metryc', 'DeepCyc'])
     @pytest.mark.parametrize("halo_size", [0, 1, 2])
     @pytest.mark.parametrize("regrid_resolution", [1, 3, 5])
