@@ -1,3 +1,4 @@
+longitude,latitude,location_id,address
 -149.8935557,61.21759217,Starbucks - AK - Anchorage  00001,"601 West Street_601 West 5th Avenue_Anchorage, Alaska 99501_907-277-2477"
 -149.9054948,61.19533942,Starbucks - AK - Anchorage  00002,"Carrs-Anchorage #1805_1650 W Northern Lights Blvd_Anchorage, Alaska 99503_907-339-0500"
 -149.7522,61.2297,Starbucks - AK - Anchorage  00003,"Elmendorf AFB_Bldg 5800 Westover Avenue_Anchorage, Alaska 99506"
@@ -6441,4 +6442,3 @@
 -83.01119585,40.01390852,Starbucks - OH - Columbus [W]  06432,"Broadway & N. High_3416 North High Street_Columbus, Ohio 43202_614-263-1292"
 -82.91467074,40.0497768,Starbucks - OH - Columbus [W]  06433,"Easton Town Center_4015 Easton Station_Columbus, Ohio 43219_(614) 337-0361"
 -82.864207,40.055326,Starbucks - OH - Columbus [W]  06434,"Morse Rd & Hamilton Rd_4784 Morse Rd_Columbus, Ohio 43230_614-475-4147"
--83.00

@@ -246,7 +246,7 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
                                  scenario=scenario, time_horizon=time_horizon,
                                  product=product, return_period=return_period)
                 dfs.append(df)
-                dfs_ws.append(df[['location_id', 'wind_speed']])
+                dfs_ws.append(df[['location_id', 'wind_speed_kph']])
 
         # Checks that we got neighbouring cells that fit inside a square
         test_polys = [dfs[i].sort_values('cell_id').iloc[0].geometry for i in range(len(dfs))]
@@ -271,12 +271,12 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
                 assert regrid_op == 'max'
                 df_ws = pd.concat(dfs_ws).groupby('location_id').max()
 
-            df_ws.rename(columns={'wind_speed': 'regridded_wind_speed'}, inplace=True)
+            df_ws.rename(columns={'wind_speed_kph': 'regridded_wind_speed'}, inplace=True)
 
             df_cen = df_cen.join(df_ws, on='location_id')
 
-            df_cen.drop(['wind_speed'], axis=1, inplace=True)
-            df_cen.rename(columns={'regridded_wind_speed': 'wind_speed', 'cell_id': 'center_cell_id'}, inplace=True)
+            df_cen.drop(['wind_speed_kph'], axis=1, inplace=True)
+            df_cen.rename(columns={'regridded_wind_speed': 'wind_speed_kph', 'cell_id': 'center_cell_id'}, inplace=True)
 
     # Add/remove some columns
     if regrid_res > 1:
@@ -329,6 +329,11 @@ def main():
 
     assert args.scenario in ['current_climate', 'SSP1-2.6', 'SSP2-4.5', 'SSP5-8.5']
     assert args.time_horizon in ['now', '2035', '2050', '2065', '2080']
+
+    if args.product.lower() == 'metryc':
+        assert args.regrid_resolution == 1, 'Regrid not supported for Metryc'
+        assert args.halo_size in [None, 0], 'Halo not supported for Metryc'
+
     assert (args.regrid_resolution >= 1) and (args.regrid_resolution % 2 == 1), \
         'Regrid resolution must be odd and >= 1'
     if args.halo_size is not None:
