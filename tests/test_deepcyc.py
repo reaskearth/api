@@ -79,9 +79,9 @@ class TestDeepcyc():
 
     @pytest.mark.parametrize("lats,lons,status", [
         ([-17.6525, 30.6], [177.2634, -90.0], {'OK'}),
-        ([24.0], [-93.0], {'NO CONTENT'}),
+        ([0.0], [0.0], {'NO CONTENT'}),
         ([30.6], [-90.0], {'OK'}),
-        ([35, 24.0],[-93.0, -93.0], {'OK', 'NO CONTENT'})
+        ([35, 14.5],[-93.0, -76.8], {'OK', 'NO CONTENT'})
     ])
     def test_tcwind_status(self, lats, lons, status):
         ret = self.dc.tcwind_returnvalues(lats, lons, [100], terrain_correction='open_water')
