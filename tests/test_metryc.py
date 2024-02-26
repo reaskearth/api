@@ -130,3 +130,61 @@ class TestMetryc():
 
         dist = geopy.distance.geodesic((clat, clon), (ilat, ilon))
         assert abs(1 - (dist.km / radius_km)) < 1e-4
+
+
+    def test_live_list(self):
+        """
+        Get listing of all live / in-season storms
+        """
+
+        ret = self.mc.live_tcwind_list()
+        assert 'Live' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) == 1
+
+
+    def test_historical_list(self):
+        """
+        Get listing of all historical storms
+        """
+
+        ret = self.mc.historical_tcwind_list()
+        assert 'Historical' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) > 800
+
+
+    @pytest.mark.parametrize("product", [
+        'Live', 
+        'Historical'
+    ])
+    def test_footprint(self, product):
+        """
+        Get footprint of a live storm
+        """
+
+        if product == 'Live':
+            ret = self.mc.live_tcwind_list()
+        else:
+            ret = self.mc.historical_tcwind_list()
+
+        assert product in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        row = df.iloc[0]
+        min_lon, min_lat, max_lon, max_lat = row.geometry.bounds
+
+        if product == 'Live':
+            ret = self.mc.live_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
+                                                storm_name=row.storm_name,
+                                                storm_year=row.storm_year)
+        else:
+            ret = self.mc.historical_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
+                                                      storm_name=row.storm_name,
+                                                      storm_season=row.storm_year)
+
+        assert ret['header']['name'] == row.storm_name
+        assert ret['header']['year'] == row.storm_year
+        assert len(ret['features']) > 1000
