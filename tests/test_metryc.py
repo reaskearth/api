@@ -194,35 +194,9 @@ class TestMetryc():
         else:
             ret = self.mc.historical_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
                                                       storm_name=row.storm_name,
-                                                      storm_season=row.storm_year)
+                                                      storm_year=row.storm_year)
             assert 'Metryc Historical' in ret['header']['product']
             assert len(ret['features']) > 1000
 
         assert ret['header']['storm_name'] == storm_name
         assert ret['header']['storm_year'] == storm_year
-
-
-    def test_circle_perf(self):
-        """
-        Test the events endpoint performance
-        """
-
-        runtimes = []
-        num_events = []
-        lats, lons = generate_random_points(30.2, -89.7, n_points=1001)
-        for i, (lat, lon) in enumerate(zip(lats, lons)):
-            start_time = time.time()
-            ret = self.mc.tctrack_events(lat, lon, geometry='circle', radius_km=50)
-
-        if i != 0:
-           runtimes.append(time.time() - start_time)
-        df = gpd.GeoDataFrame.from_features(ret)
-        num_events.append(len(df))
-
-        print('metrcy/events events min {}, max {}'.format(np.min(num_events),
-        np.max(num_events)))
-
-        print('metrcy/events time min {}s, max {}s, mean {}s, stddev {}s'.format(np.min(runtimes),
-        np.max(runtimes), np.mean(runtimes), np.std(runtimes)))
-
-        # FIXME: Expect a difference between using the 'fast' and 'slow' approaches

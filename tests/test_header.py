@@ -85,5 +85,22 @@ class TestHeader:
 
         rets, expected_prods = call_all_endpoints_at_location(prod, lat, lon)
 
-        for ret, prod in zip(rets, expected_prods):
-            assert prod in ret['header']['product']
+        for ret, product_name in zip(rets, expected_prods):
+            assert product_name in ret['header']['product']
+
+
+    @pytest.mark.parametrize("lat,lon", TEST_LOCATIONS)
+    @pytest.mark.parametrize("prod", [mc, dc])
+    def test_product_versions(self, prod, lat, lon):
+        """
+        Check that the correct product version is returned on all endpoints
+        """
+
+        rets, _ = call_all_endpoints_at_location(prod, lat, lon)
+
+        for ret in rets:
+            if 'Metryc' in ret['header']['product']:
+                assert 'v1.0.4' in ret['header']['product']
+            else:
+                assert 'DeepCyc' in ret['header']['product']
+                assert 'v2.0.6' in ret['header']['product']
