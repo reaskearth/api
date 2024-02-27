@@ -10,6 +10,7 @@ import subprocess as sp
 class TestTools:
 
     @pytest.mark.skipif(sys.platform == 'win32', reason='Temp file is not writable on Windows')
+    @pytest.mark.skipif(sys.platform == 'darwin', reason='Temp file is not writable on Mac')
     @pytest.mark.parametrize("product", ['Metryc', 'DeepCyc'])
     @pytest.mark.parametrize("halo_size", [0, 1, 2])
     @pytest.mark.parametrize("regrid_resolution", [1, 3, 5])
@@ -40,3 +41,15 @@ class TestTools:
         ret_df = pd.read_csv(io.StringIO(ret.stdout.decode()), sep=',')
 
         set(input_df.location_id) == set(ret_df.location_id)
+
+        if product == 'DeepCyc':
+            if halo_size == 0:
+                assert len(ret_df) == len(input_df)
+
+                if regrid_resolution > 1:
+                    assert ret_df.iloc[0].resolution_deg == regrid_resolution*(2**-7 + 2**-9)
+            else:
+                side_len = halo_size*2 + 1
+                assert len(ret_df) == len(input_df)*side_len**2
+
+

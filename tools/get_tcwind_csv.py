@@ -53,14 +53,12 @@ def _do_queries_serially(all_lats, all_lons,
         # We are pulling the full stochastic history - do one lat, lon pair at a time.
         num_calls = len(all_lats)
 
-    token_age = 0
     start_time = time.time()
     all_query_dfs = []
     for lats, lons in zip(np.array_split(all_lats, num_calls),
                           np.array_split(all_lons, num_calls)):
 
-        token_age = time.time() - start_time
-        if token_age > 3600:
+        if (time.time() - start_time) > 3600:
             if product.lower() == 'deepcyc':
                 m = DeepCyc()
             else:
@@ -112,11 +110,11 @@ def _do_queries_serially(all_lats, all_lons,
     return df
 
 
-def _do_queries_in_parallel(all_lats, all_lons,
-                             terrain_correction,
-                             wind_speed_averaging_period,
-                             product, scenario,
-                             time_horizon, return_period):
+def _do_queries(all_lats, all_lons,
+                 terrain_correction,
+                 wind_speed_averaging_period,
+                 product, scenario,
+                 time_horizon, return_period):
 
     import multiprocessing as mp
     from itertools import repeat
@@ -125,7 +123,13 @@ def _do_queries_in_parallel(all_lats, all_lons,
     lats = np.array_split(all_lats, num_calls)
     lons = np.array_split(all_lons, num_calls)
 
-    with mp.Pool(8) as pool:
+    do_parallel = True
+    if do_parallel:
+        num_procs = 8
+    else:
+        num_procs = 1
+
+    with mp.Pool(num_procs) as pool:
         dfs = pool.starmap(_do_queries_serially,
                             zip(lats, lons,
                                repeat(terrain_correction),
@@ -156,19 +160,10 @@ def _get_hazard(all_lats, all_lons, location_ids=None,
         assert terrain_correction == 'open_water', \
             '10 minutes wind speed averaging period only supported for Open Water terrain type.'
 
-    do_parallel = True
-    if do_parallel:
-        df = _do_queries_in_parallel(all_lats, all_lons,
-                                     terrain_correction,
-                                     wind_speed_averaging_period,
-                                     product, scenario,
-                                     time_horizon, return_period)
-    else:
-        df = _do_queries_serially(all_lats, all_lons,
-                                  terrain_correction,
-                                  wind_speed_averaging_period,
-                                  product, scenario,
-                                  time_horizon, return_period)
+    df = _do_queries(all_lats, all_lons, terrain_correction,
+                     wind_speed_averaging_period,
+                     product, scenario,
+                     time_horizon, return_period)
 
     # FIXME: API-112 we may get duplicates if there is more than one query
     # within the same grid cell.
@@ -198,7 +193,7 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
                               wind_speed_averaging_period='3_seconds',
                               product='deepcyc', scenario='current_climate',
                               time_horizon='now', return_period=None, regrid_res=1,
-                              regrid_op='mean', halo_size=None):
+                              regrid_op='mean', halo_size=0):
     """
     Get hazard with a particular resolution or with a halo.
 
@@ -224,9 +219,9 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
                          scenario=scenario, time_horizon=time_horizon,
                          product=product, return_period=return_period)
 
-    if regrid_res > 1 or halo_size is not None:
+    if regrid_res > 1 or halo_size > 0:
         # Offset lats, lons to lower left corner
-        if halo_size is not None:
+        if halo_size > 0:
             side_len = halo_size*2 + 1
         else:
             side_len = regrid_res
@@ -256,9 +251,10 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
         assert max_lat - min_lat == side_len*RKG_RES, "Error in regridding, wrong dlat."
         assert max_lon - min_lon == side_len*RKG_RES, "Error in regridding, wrong dlon."
 
-        if halo_size is not None:
+        if halo_size > 0:
             df_cen = pd.concat(dfs)
             assert len(df_cen) == len(all_lats)*side_len**2
+
         else:
             assert regrid_res > 1
 
@@ -278,6 +274,7 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
             df_cen.drop(['wind_speed_kph'], axis=1, inplace=True)
             df_cen.rename(columns={'regridded_wind_speed': 'wind_speed_kph', 'cell_id': 'center_cell_id'}, inplace=True)
 
+
     # Add/remove some columns
     if regrid_res > 1:
         df_cen['resolution_deg'] = RKG_RES*regrid_res
@@ -286,7 +283,9 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
     # FIXME: see API-108: API can return "best effort" return period for
     # location with very low risk.
     if return_period is not None:
-        df_cen = df_cen[df_cen.return_period == return_period]
+        df_cen.loc[df_cen.return_period != return_period, 'wind_speed_kph'] = np.nan
+        df_cen.loc[df_cen.return_period != return_period, 'status'] = 'NO CONTENT'
+        df_cen.loc[df_cen.return_period != return_period, 'return_period'] = return_period
 
     return df_cen
 
@@ -319,7 +318,7 @@ def main():
                          help="The regridding resolution in units of (2**-7 + 2**-9) degrees. Must be an odd number.")
     parser.add_argument('--regrid_operation', required=False, default='mean', type=str,
                          help="The of operation used to regrid to a new resolution. Supports: 'mean', 'median' or 'max'")
-    parser.add_argument('--halo_size', required=False, default=None, type=int,
+    parser.add_argument('--halo_size', required=False, default=0, type=int,
                          help="Put a halo of <size> grid cells around the requested locations.")
     parser.add_argument('--noheader', required=False, action='store_true', default=False,
                          help="Don't add CSV header line to output")
@@ -332,11 +331,12 @@ def main():
 
     if args.product.lower() == 'metryc':
         assert args.regrid_resolution == 1, 'Regrid not supported for Metryc'
-        assert args.halo_size in [None, 0], 'Halo not supported for Metryc'
+        assert args.halo_size == 0, 'Halo not supported for Metryc'
 
     assert (args.regrid_resolution >= 1) and (args.regrid_resolution % 2 == 1), \
         'Regrid resolution must be odd and >= 1'
-    if args.halo_size is not None:
+
+    if args.halo_size > 0:
         assert args.regrid_resolution == 1, "Halo and regrid options can't be used together"
 
     if args.output_filename is not None and Path(args.output_filename).exists():
