@@ -3,14 +3,13 @@ import logging
 import sys
 import time
 import requests
-from dataclasses import dataclass 
+from dataclasses import dataclass
 from reaskapi.auth import get_access_token
 
 URL_MAX_BYTES = 2**15
 
 
-#DEFAULT_BASE_URL = 'https://api.reask.earth/v2'
-DEFAULT_BASE_URL = 'https://api.reask.earth/dev'
+DEFAULT_BASE_URL = 'https://api.reask.earth/v2'
 DEFAULT_CONFIG_SECTION = 'default'
 
 @dataclass
@@ -138,7 +137,7 @@ class ApiClient:
                 raise Exception(f"API returned HTTP {res.status_code} with {err_msg}")
 
         self.logger.info(f"querying {endpoint} took {round((time.time() - start_time) * 1000)}ms")
-        
+
         if 'Content-Type' in res.headers and res.headers['Content-Type'] == 'application/json':
             self.logger.debug(res.json())
             return res.json()
