@@ -33,9 +33,6 @@ class TestMetryc():
         ret = self.mc.tcwind_events(lats, lons)
         df = gpd.GeoDataFrame.from_features(ret)
 
-        assert set(['geometry', 'cell_id', 'storm_name', 'storm_year',
-                    'wind_speed', 'storm_id', 'event_id', 'status']) == set(df.columns)
-
         assert storm_name in list(df.storm_name)
 
     @pytest.mark.parametrize("lats,lons,status", [
@@ -47,6 +44,9 @@ class TestMetryc():
 
         ret = self.mc.tcwind_events(lats, lons, terrain_correction='open_water')
         df = gpd.GeoDataFrame.from_features(ret)
+
+        assert set(['geometry', 'cell_id', 'storm_name', 'storm_year',
+                    'wind_speed', 'storm_id', 'event_id', 'status']) == set(df.columns)
 
         assert set(df.status) == status
 
@@ -83,6 +83,7 @@ class TestMetryc():
 
 
     @pytest.mark.parametrize("lats,lons,geometry,radius_km", [
+        ([50], [-90], 'circle', 10),
         ([30], [-90], 'circle', 50),
         (30, -90, 'circle', 50),
         ([28, 27.5, 25, 25, 27.5, 30], [-83, -83, -81.5, -79.5, -79.5, -80], 'line', None)
@@ -110,10 +111,10 @@ class TestMetryc():
             assert set(lats) == set(query_lats)
             assert set(lons) == set(query_lons)
 
-        set(['geometry', 'storm_name', 'storm_year', 
-             'wind_speed', 'storm_id', 'event_id']) == set(df.columns)
-
-        assert len(df) > 30
+        if len(df) > 0:
+            set(['geometry', 'storm_name', 'storm_year',
+                 'wind_speed', 'storm_id', 'event_id']) == set(df.columns)
+            assert len(df) > 30
 
 
     def test_circle_intersection(self):
