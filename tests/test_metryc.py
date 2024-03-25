@@ -33,6 +33,9 @@ class TestMetryc():
         ret = self.mc.tcwind_events(lats, lons)
         df = gpd.GeoDataFrame.from_features(ret)
 
+        assert set(['geometry', 'cell_id', 'storm_name', 'storm_year',
+                    'wind_speed', 'storm_id', 'event_id', 'status']) == set(df.columns)
+
         assert storm_name in list(df.storm_name)
 
     @pytest.mark.parametrize("lats,lons,status", [
@@ -106,6 +109,9 @@ class TestMetryc():
             # FIXME: check this properly
             assert set(lats) == set(query_lats)
             assert set(lons) == set(query_lons)
+
+        set(['geometry', 'storm_name', 'storm_year', 
+             'wind_speed', 'storm_id', 'event_id']) == set(df.columns)
 
         assert len(df) > 30
 
