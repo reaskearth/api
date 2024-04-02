@@ -1,4 +1,5 @@
 
+import sys
 import time
 from reaskapi.api_client import ApiClient, ClientConfig
 
@@ -42,6 +43,18 @@ class DeepCyc(ApiClient):
         self.logger.debug(f'Parameters: {params}')
 
         return self._call_api(params, 'deepcyc/tcwind/returnvalues')
+
+    def tcwind_payout(self, portfolio, curve, **kwargs):
+
+        params = kwargs.copy()
+
+        post_data = { 'portfolio': portfolio, 'curve': curve }
+        self.logger.debug(f'Parameters: {params}')
+
+        print("do payout post", post_data)
+        print("do payout params", params)
+
+        return self._call_api(params, 'deepcyc/tcwind/payout', 'POST', post_data)
 
     def tctrack_returnperiods(self, lat, lon, return_value, geometry, **kwargs):
 
@@ -108,3 +121,4 @@ class DeepCyc(ApiClient):
         self.logger.debug(f'Parameters: {params}')
 
         return self._call_api(params, 'deepcyc/tctrack/central_pressure/returnvalues')
+
