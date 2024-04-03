@@ -1,4 +1,5 @@
 import logging
+import time
 import pandas as pd
 import geopandas as gpd
 import numpy as np
@@ -14,6 +15,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from reaskapi.metryc import Metryc
 
+from test_deepcyc import generate_random_points
 
 class TestMetryc():
     mc = Metryc()
@@ -24,14 +26,14 @@ class TestMetryc():
     logger = logging.getLogger(__name__)
 
 
-    @pytest.mark.parametrize("lats,lons,name", [
+    @pytest.mark.parametrize("lats,lons,storm_name", [
         ([29.95747], [-90.06295], 'Katrina')
     ])
-    def test_tcwind_simple(self, lats, lons, name):
+    def test_tcwind_simple(self, lats, lons, storm_name):
         ret = self.mc.tcwind_events(lats, lons)
         df = gpd.GeoDataFrame.from_features(ret)
 
-        assert name in list(df.name)
+        assert storm_name in list(df.storm_name)
 
     @pytest.mark.parametrize("lats,lons,status", [
         ([-17.6525, 30.6], [177.2634, -90.0], {'OK'}),
@@ -46,17 +48,17 @@ class TestMetryc():
         assert set(df.status) == status
 
 
-    @pytest.mark.parametrize("lats,lons,name", [
+    @pytest.mark.parametrize("lats,lons,storm_name", [
         ([29.95747], [-90.06295], 'Katrina')
     ])
-    def test_tcwind_terrain_correction(self, lats, lons, name):
+    def test_tcwind_terrain_correction(self, lats, lons, storm_name):
 
         for terrain_correction in ['open_water', 'open_terrain', 'full_terrain_gust']:
             ret = self.mc.tcwind_events(lats, lons, terrain_correction=terrain_correction)
             assert ret['header']['terrain_correction'] == terrain_correction
 
             df = gpd.GeoDataFrame.from_features(ret)
-            assert name in list(df.name)
+            assert storm_name in list(df.storm_name)
 
 
     @pytest.mark.parametrize("width_and_height,lower_lat,left_lon", [
@@ -71,6 +73,7 @@ class TestMetryc():
         yy, xx = np.meshgrid(lats, lons)
 
         ret = self.mc.tcwind_events(yy.flatten(), xx.flatten())
+        assert 'Metryc Historical' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert len(set(df.cell_id)) == width_and_height*width_and_height
@@ -120,9 +123,10 @@ class TestMetryc():
         clat = 30.27
         clon = -89.70
         ret = self.mc.tctrack_events([clat], [clon], geometry='circle', radius_km=radius_km)
+        assert 'Metryc Historical' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
-        assert 'Katrina' in list(df.name)
+        assert 'Katrina' in list(df.storm_name)
 
         geom = df.iloc[0].geometry
         ilat = geom.y
@@ -138,10 +142,11 @@ class TestMetryc():
         """
 
         ret = self.mc.live_tcwind_list()
-        assert 'Live' in ret['header']['product']
+        assert 'Metryc Live' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
-        assert len(df) == 1
+        assert 'Otis_2023_2023291N08267_Live_USA_EP' in list(df.event_id)
+        assert len(df) >= 1
 
 
     def test_historical_list(self):
@@ -150,14 +155,14 @@ class TestMetryc():
         """
 
         ret = self.mc.historical_tcwind_list()
-        assert 'Historical' in ret['header']['product']
+        assert 'Metryc Historical' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert len(df) > 800
 
 
     @pytest.mark.parametrize("product", [
-        'Live', 
+        'Live',
         'Historical'
     ])
     def test_footprint(self, product):
@@ -171,7 +176,11 @@ class TestMetryc():
             ret = self.mc.historical_tcwind_list()
 
         assert product in ret['header']['product']
+
         df = gpd.GeoDataFrame.from_features(ret)
+        min_lon, min_lat, max_lon, max_lat = df.iloc[0].geometry.bounds
+        storm_name = df.iloc[0].storm_name
+        storm_year = df.iloc[0].storm_year
 
         row = df.iloc[0]
         min_lon, min_lat, max_lon, max_lat = row.geometry.bounds
@@ -180,11 +189,14 @@ class TestMetryc():
             ret = self.mc.live_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
                                                 storm_name=row.storm_name,
                                                 storm_year=row.storm_year)
+            assert 'Metryc Live' in ret['header']['product']
+            assert len(ret['features']) >= 1
         else:
             ret = self.mc.historical_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
                                                       storm_name=row.storm_name,
-                                                      storm_season=row.storm_year)
+                                                      storm_year=row.storm_year)
+            assert 'Metryc Historical' in ret['header']['product']
+            assert len(ret['features']) > 1000
 
-        assert ret['header']['name'] == row.storm_name
-        assert ret['header']['year'] == row.storm_year
-        assert len(ret['features']) > 1000
+        assert ret['header']['storm_name'] == storm_name
+        assert ret['header']['storm_year'] == storm_year

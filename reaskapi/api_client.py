@@ -3,7 +3,7 @@ import logging
 import sys
 import time
 import requests
-from dataclasses import dataclass 
+from dataclasses import dataclass
 from reaskapi.auth import get_access_token
 
 URL_MAX_BYTES = 2**15
@@ -22,6 +22,13 @@ class ClientConfig:
 
 class ApiClient:
     logger = logging.getLogger(__name__)
+
+    deprecated_args = {
+        'name': 'storm_name',
+        'year': 'storm_year',
+        'season': 'storm_year',
+        'storm_season': 'storm_year'
+    }
 
     def __init__(self, product, config_section='default'):
         """
@@ -90,10 +97,15 @@ class ApiClient:
         return self._call_api(params, f'{self.product.lower()}/tctrack/central_pressure/events')
 
     def _call_api(self, params, endpoint, method='GET', post_data={}):
-
         """
         Base method to send authenticated calls to the API HTTP endpoints
         """
+
+        # Normalise/fix deprecated parameters
+        params = param_args.copy()
+        for k in param_args.keys():
+            if k in self.deprecated_args.keys():
+                params[k] = self.deprecated_args[k]
 
         url = f'{self.base_url}/{endpoint}'
 
@@ -129,7 +141,7 @@ class ApiClient:
                 raise Exception(f"API returned HTTP {res.status_code} with {err_msg}")
 
         self.logger.info(f"querying {endpoint} took {round((time.time() - start_time) * 1000)}ms")
-        
+
         if 'Content-Type' in res.headers and res.headers['Content-Type'] == 'application/json':
             self.logger.debug(res.json())
             return res.json()
