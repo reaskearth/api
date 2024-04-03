@@ -1,5 +1,4 @@
 
-import sys
 import time
 from reaskapi.api_client import ApiClient, ClientConfig
 
@@ -50,9 +49,6 @@ class DeepCyc(ApiClient):
 
         post_data = { 'portfolio': portfolio, 'curve': curve }
         self.logger.debug(f'Parameters: {params}')
-
-        print("do payout post", post_data)
-        print("do payout params", params)
 
         return self._call_api(params, 'deepcyc/tcwind/payout', 'POST', post_data)
 
