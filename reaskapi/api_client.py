@@ -96,8 +96,7 @@ class ApiClient:
 
         return self._call_api(params, f'{self.product.lower()}/tctrack/central_pressure/events')
 
-
-    def _call_api(self, param_args, endpoint):
+    def _call_api(self, param_args, endpoint, method='GET', post_data={}):
         """
         Base method to send authenticated calls to the API HTTP endpoints
         """
@@ -115,9 +114,15 @@ class ApiClient:
         # using with block to ensure connection resources are properly released
         with requests.Session() as session:
 
+            if (method == 'GET'):
+                req = requests.Request('GET', url, params=params,
+                                       headers=self.headers).prepare()
+            else:
+                assert method == 'POST'
+                req = requests.Request('POST', url, params=params,
+                                       headers=self.headers, json=post_data).prepare()
+
             # ensure that the request url is not too long
-            req = requests.Request('GET', url, params=params,
-                                     headers=self.headers).prepare()
             url_bytes = len(req.url)
             if url_bytes > URL_MAX_BYTES:
                 print('Error: request url is too long. {} > {} bytes'.format(url_bytes, URL_MAX_BYTES), file=sys.stderr)

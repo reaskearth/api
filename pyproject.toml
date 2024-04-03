@@ -7,7 +7,7 @@ where = ["."]
 
 [project]
 name = "reaskapi"
-version = "1.0.0"
+version = "1.0.1"
 description = "Reask API Client"
 readme = "README.md"
 requires-python = ">=3.7"
