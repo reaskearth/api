@@ -96,7 +96,7 @@ class ApiClient:
 
         return self._call_api(params, f'{self.product.lower()}/tctrack/central_pressure/events')
 
-    def _call_api(self, params, endpoint, method='GET', post_data={}):
+    def _call_api(self, param_args, endpoint, method='GET', post_data={}):
         """
         Base method to send authenticated calls to the API HTTP endpoints
         """
