@@ -118,6 +118,7 @@ class ApiClient:
                 req = requests.Request('GET', url, params=params,
                                        headers=self.headers).prepare()
             else:
+                assert method == 'POST'
                 req = requests.Request('POST', url, params=params,
                                        headers=self.headers, json=post_data).prepare()
 
