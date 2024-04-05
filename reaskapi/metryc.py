@@ -45,3 +45,10 @@ class Metryc(ApiClient):
 
         self.logger.debug(f'Parameters: {kwargs}')
         return self._call_api(kwargs, 'metryc/historical/tcwind/list')
+
+
+    def historical_tctrack_points(self, **kwargs):
+
+        self.logger.debug(f'Parameters: {kwargs}')
+        return self._call_api(kwargs, 'metryc/historical/tctrack/points')
+
