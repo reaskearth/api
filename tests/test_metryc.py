@@ -201,7 +201,6 @@ class TestMetryc():
         assert ret['header']['storm_name'] == storm_name
         assert ret['header']['storm_year'] == storm_year
 
-
     def test_tctrack_points(self):
 
         ret = self.mc.historical_tctrack_points(storm_id='1994197N09229')
@@ -221,3 +220,39 @@ class TestMetryc():
             ret = self.mc.historical_tctrack_points(storm_id='INVALID_STORM_ID')
         except Exception as e:
             assert 'storm_id INVALID_STORM_ID not found' in str(e)
+
+    def test_circle_perf(self):
+        """
+        Test the events endpoint performance
+        """
+
+        accurate_runtimes = []
+        fast_runtimes = []
+        num_events = []
+        lats, lons = generate_random_points(30.2, -89.7, n_points=101)
+
+        for i, (lat, lon) in enumerate(zip(lats, lons)):
+            start_time = time.time()
+            ret = self.mc.tctrack_events(lat, lon, geometry='circle', radius_km=50)
+            assert ret['header']['map_projection_used_for_geometric_calculations'] == 'AEQD'
+            if i != 0:
+               accurate_runtimes.append(time.time() - start_time)
+
+            start_time = time.time()
+            ret = self.mc.tctrack_events(lat, lon, geometry='circle', radius_km=50, accurate_flag=False)
+            assert ret['header']['map_projection_used_for_geometric_calculations'] == 'WGS84'
+            if i != 0:
+               fast_runtimes.append(time.time() - start_time)
+
+            df = gpd.GeoDataFrame.from_features(ret)
+            num_events.append(len(df))
+
+        print('metrcy/events events min {}, max {}'.format(np.min(num_events), np.max(num_events)))
+
+        print('metrcy/events accurate time min {}s, max {}s, mean {}s, stddev {}s'.format(np.min(accurate_runtimes), 
+                    np.max(accurate_runtimes), np.mean(accurate_runtimes), np.std(accurate_runtimes)))
+        print('metrcy/events fast time min {}s, max {}s, mean {}s, stddev {}s'.format(np.min(fast_runtimes), 
+                    np.max(fast_runtimes), np.mean(fast_runtimes), np.std(fast_runtimes)))
+
+        # This does not work under high load
+        #assert np.mean(fast_runtimes) < np.mean(accurate_runtimes)

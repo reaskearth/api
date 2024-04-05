@@ -23,7 +23,6 @@ class Metryc(ApiClient):
         self.logger.debug(f'Parameters: {params}')
         return self._call_api(params, f'metryc/{subproduct}/tcwind/footprint')
 
-
     def tcwind_footprint(self, min_lat, max_lat, min_lon, max_lon, **kwargs):
 
         return self.__tcwind_footprint('historical', min_lat, max_lat, min_lon, max_lon, **kwargs)

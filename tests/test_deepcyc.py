@@ -56,7 +56,7 @@ class TestDeepcyc():
         (31.6938, -85.1774),    # CONUS
         (-20.35685, 148.95112), # Australia
         (14.0, 121),            # Philippines
-        #(22.25, 114.20)        # Hong Kong
+        (22.25, 114.20),        # Hong Kong
         (-35.5, 174)            # New Zealand
     ])
     def test_tcwind_locations(self, lat, lon):
@@ -65,6 +65,26 @@ class TestDeepcyc():
 
         assert ret['header']['message'] is None
         assert len(set(df.cell_id)) == 1
+
+
+    @pytest.mark.parametrize("lat,lon", [
+        (-17.68298, 177.2756),  # Fiji
+        (31.6938, -85.1774),    # CONUS
+        (-20.35685, 148.95112), # Australia
+        (14.0, 121),            # Philippines
+        (22.25, 114.20),        # Hong Kong
+        (-35.5, 174)            # New Zealand
+    ])
+    def test_tcwind_performance(self, lat, lon):
+
+        lats, lons = generate_random_points(lat, lon, n_points=100)
+        start_time = time.time()
+        ret = self.dc.tcwind_returnvalues(lats, lons, [100])
+        print('Querying 100 points took {}s'.format(time.time() - start_time))
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert ret['header']['message'] is None
+        assert len(df) == 100
 
 
     @pytest.mark.parametrize("lats,lons", [
