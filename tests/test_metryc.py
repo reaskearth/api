@@ -200,3 +200,24 @@ class TestMetryc():
 
         assert ret['header']['storm_name'] == storm_name
         assert ret['header']['storm_year'] == storm_year
+
+
+    def test_tctrack_points(self):
+
+        ret = self.mc.historical_tctrack_points(storm_id='1994197N09229')
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) == 73
+        assert df.iloc[0].track_name == 'Emilia 1994'
+
+        ret = self.mc.historical_tctrack_points(storm_id='2017228N14314')
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) == 141
+        assert df.iloc[0].track_name == 'Harvey 2017'
+        assert round(df.wind_speed.max()) == 213
+
+        try:
+            ret = self.mc.historical_tctrack_points(storm_id='INVALID_STORM_ID')
+        except Exception as e:
+            assert 'storm_id INVALID_STORM_ID not found' in str(e)
