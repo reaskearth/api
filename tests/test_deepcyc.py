@@ -332,3 +332,47 @@ class TestDeepcyc():
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert len(df.wind_speed) == len(return_periods)
+
+
+    @pytest.mark.parametrize("scenario,time_horizon", [
+        ('current_climate', 'now'),
+        ('SSP1-2.6', '2035'),
+        ('SSP1-2.6', '2050'),
+        ('SSP1-2.6', '2065'),
+        ('SSP2-4.5', '2035'),
+        ('SSP2-4.5', '2050'),
+        ('SSP2-4.5', '2065'),
+        ('SSP5-8.5', '2035'),
+        ('SSP5-8.5', '2050'),
+        ('SSP5-8.5', '2065'),
+
+        ('SSP1-2.6', '2080'),
+        ('SSP2-4.5', '2080'),
+        ('SSP5-8.5', '2080'),
+    ])
+    @pytest.mark.parametrize("lats,lons", [
+        ([28.5, 28.5], [-88.5, -88.25]), # Gulf
+        ([22.15, 22.15], [114.0, 114.25]) # Hong Kong
+    ])
+    def test_tctrack_future_climate(self, lats, lons, scenario, time_horizon):
+
+        return_periods = [50, 100, 250, 500, 1000]
+        ret = self.dc.tctrack_returnvalues(lats, lons, return_periods, 'line',
+                                           scenario=scenario, time_horizon=time_horizon)
+        assert 'DeepCyc Maps' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+        assert len(df) == 5
+        assert ret['header']['scenario'] == scenario
+        assert ret['header']['time_horizon'] == time_horizon
+
+        # FIXME: add 2080 time_horizon
+        if time_horizon in ['2080']:
+            set(df.status) == {'NO CONTENT'}
+        else:
+            set(df.status) == {'OK'}
+            assert list(df.wind_speed) == sorted(list(df.wind_speed))
+
+            if scenario == 'current_climate':
+                assert ret['header']['simulation_years'] == 41000
+            else:
+                assert ret['header']['simulation_years'] == 25000
