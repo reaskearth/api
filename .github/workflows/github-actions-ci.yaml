@@ -35,6 +35,9 @@ jobs:
 
     - name: Set up credentials (Linux and MacOS)
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+      exclude: # Apple Silicon ARM64 does not support Python < v3.8
+        - python-version: "3.7"
+          os: macos-latest
       env:
         USERNAME: ${{ secrets.REASK_API_USERNAME }}
         PASSWORD: ${{ secrets.REASK_API_PASSWORD }}
@@ -51,7 +54,7 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-        
+
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
