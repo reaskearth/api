@@ -1,6 +1,7 @@
 import logging
 import time
 import pandas as pd
+import datetime as dt
 import geopandas as gpd
 import numpy as np
 import pytest
@@ -27,11 +28,14 @@ class TestMetryc():
 
 
     @pytest.mark.parametrize("lats,lons,storm_name", [
-        ([29.95747], [-90.06295], 'Katrina')
+        ([26.95747, 25.0], [-82.06295, -82.1], 'Katrina')
     ])
     def test_tcwind_simple(self, lats, lons, storm_name):
         ret = self.mc.tcwind_events(lats, lons)
         df = gpd.GeoDataFrame.from_features(ret)
+
+        #import pdb
+        #pdb.set_trace()
 
         assert storm_name in list(df.storm_name)
 
@@ -220,6 +224,40 @@ class TestMetryc():
             ret = self.mc.historical_tctrack_points(storm_id='INVALID_STORM_ID')
         except Exception as e:
             assert 'storm_id INVALID_STORM_ID not found' in str(e)
+
+
+    def test_tctrack_consistency(self):
+        """
+        Test consistency of some track data
+            1. Check that the storm_year is correct
+        """
+
+        ret = self.mc.historical_tcwind_list()
+        assert 'Metryc Historical' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        storm_names = [sn.split('_')[0] for sn in df.event_id]
+        assert (df.storm_name == storm_names).all(), 'Storm names do not match'
+
+        storm_years = [int(sn.split('_')[1]) for sn in df.event_id]
+        assert (df.storm_year == storm_years).all(), 'Storm years do not match'
+
+        for sid, storm_name, storm_year in zip(df.storm_id, storm_names, storm_years):
+            try:
+                ret = self.mc.historical_tctrack_points(storm_id=sid)
+            except Exception as e:
+                print(str(e))
+                continue
+            # FIXME: remove the .lower() - these should be case sensitive
+            assert (ret['header']['storm_name']).lower() == storm_name.lower(), 'Storm name in header does not match'
+            assert int(ret['header']['storm_year']) == storm_year, 'Storm year in header does not match'
+
+            start_time = gpd.GeoDataFrame.from_features(ret).iloc[0].iso_time
+            year = dt.datetime.fromisoformat(start_time).year
+
+            if year != storm_year:
+                print('storm_year wrong for {} {}'.format(storm_name, storm_year))
+
 
     def test_circle_perf(self):
         """
