@@ -114,6 +114,8 @@ class TestDeepcyc():
 
 
     @pytest.mark.parametrize("scenario,time_horizon", [
+        ('SSP1-2.6', 'now'),
+        ('current_climate', '2035'),
         ('SSP1-2.6', '2035'),
         ('SSP2-4.5', '2035'),
         ('SSP5-8.5', '2035'),
@@ -147,14 +149,19 @@ class TestDeepcyc():
             assert ret1['header']['simulation_years'] == 41000
         df_now = gpd.GeoDataFrame.from_features(ret1)
 
-        ret2 = self.dc.tcwind_returnvalues(lats, lons, return_periods,
-                                            scenario=scenario, time_horizon=time_horizon)
-        assert ret2['header']['scenario'] == scenario
-        assert ret2['header']['time_horizon'] == time_horizon
-        assert ret2['header']['simulation_years'] == 25000
-        df_future = gpd.GeoDataFrame.from_features(ret2)
+        try:
+            ret2 = self.dc.tcwind_returnvalues(lats, lons, return_periods,
+                                                scenario=scenario, time_horizon=time_horizon)
+        except Exception as e:
+            assert scenario == 'current_climate' or time_horizon == 'now'
+            assert 'Unsupported' in str(e)
+        else:
+            assert ret2['header']['scenario'] == scenario
+            assert ret2['header']['time_horizon'] == time_horizon
+            assert ret2['header']['simulation_years'] == 25000
+            df_future = gpd.GeoDataFrame.from_features(ret2)
 
-        assert (df_now.wind_speed < df_future.wind_speed).all()
+            assert (df_now.wind_speed < df_future.wind_speed).all()
 
 
     @pytest.mark.parametrize("num_points", [
