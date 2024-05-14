@@ -25,7 +25,7 @@ def make_output_filename(parsed_args):
         suffix = 'tiff'
 
     if args['storm_name']:
-        template = '{storm_name}_{storm_season}'
+        template = '{storm_name}_{storm_year}'
 
     args['wind_speed_averaging_period'] = args['wind_speed_averaging_period'].replace('_', '-')
 
@@ -44,8 +44,8 @@ def main():
                         help="File format of return value. Gan be geojson or geotiff.")
     parser.add_argument('--storm_name', required=False, default=None, type=str,
                         help='The name of the storm. To be used in conjunction with --storm_year')
-    parser.add_argument('--storm_season', required=False, default=None, type=int,
-                        help='The season of the storm. To be used in conjunction with --storm_name')
+    parser.add_argument('--storm_year', required=False, default=None, type=int,
+                        help='The year of the storm. To be used in conjunction with --storm_name')
     parser.add_argument('--storm_id', required=False, default=None, type=str,
                         help='The storm id. Alternative to --storm_name and --storm_year')
     parser.add_argument('--terrain_correction', required=False,
@@ -59,13 +59,13 @@ def main():
 
     args = parser.parse_args()
 
-    if args.storm_name and not args.storm_season:
-        print('Please provide both storm_name and storm_season')
+    if args.storm_name and not args.storm_year:
+        print('Please provide both storm_name and storm_year')
         parser.print_help()
         return 1
 
     if not args.storm_name and not args.storm_id:
-        print('Please provide storm_name and storm_season or storm_id')
+        print('Please provide storm_name and storm_year or storm_id')
         parser.print_help()
         return 1
 
@@ -101,7 +101,7 @@ def main():
     m = Metryc()
     ret = m.tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
                              storm_name=args.storm_name,
-                             storm_season=args.storm_season,
+                             storm_year=args.storm_year,
                              storm_id=args.storm_id,
                              format=args.format,
                              terrain_correction=args.terrain_correction,
