@@ -188,13 +188,13 @@ class TestMetryc():
         if product == 'Live':
             ret = self.mc.live_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
                                                 storm_name=row.storm_name,
-                                                storm_year=row.storm_year)
+                                                storm_year=row.storm_year, format='geojson')
             assert 'Metryc Live' in ret['header']['product']
             assert len(ret['features']) >= 1
         else:
             ret = self.mc.historical_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
                                                       storm_name=row.storm_name,
-                                                      storm_year=row.storm_year)
+                                                      storm_year=row.storm_year, format='geojson')
             assert 'Metryc Historical' in ret['header']['product']
             assert len(ret['features']) > 1000
 
