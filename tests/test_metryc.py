@@ -34,9 +34,6 @@ class TestMetryc():
         ret = self.mc.tcwind_events(lats, lons)
         df = gpd.GeoDataFrame.from_features(ret)
 
-        #import pdb
-        #pdb.set_trace()
-
         assert storm_name in list(df.storm_name)
 
     @pytest.mark.parametrize("lats,lons,status", [
@@ -228,8 +225,7 @@ class TestMetryc():
 
     def test_tctrack_consistency(self):
         """
-        Test consistency of some track data
-            1. Check that the storm_year is correct
+        Test consistency of storm track year and name
         """
 
         ret = self.mc.historical_tcwind_list()
@@ -246,25 +242,27 @@ class TestMetryc():
             try:
                 ret = self.mc.historical_tctrack_points(storm_id=sid)
             except Exception as e:
-                #print('storm id {} not found'.format(sid))
+                continue
+
+            # FIXME: inconsistencies to be fixed
+            if (storm_name == 'Bonita' and storm_year == 1996) or \
+               (storm_name == 'Bernie' and storm_year == 2001):
                 continue
 
             points_storm_name = ret['header']['storm_name']
             points_storm_year = int(ret['header']['storm_year'])
 
             # FIXME: remove the .lower() - these should be case sensitive
-            """
-            if points_storm_name != storm_name:
-                print('storm name inconsistent {} != {}'.format(points_storm_name, storm_name))
-            if points_storm_year != storm_year:
-                print('storm year inconsistent {} {} != {}'.format(storm_name, points_storm_year, storm_year))
-            """
+            assert points_storm_name.lower() == storm_name.lower(), \
+                'storm name inconsistent {} {} != {} {}'.format(points_storm_name, points_storm_year, storm_name, storm_year)
+
+            assert points_storm_year == storm_year, \
+                'storm year inconsistent {} {} != {}'.format(storm_name, points_storm_year, storm_year)
 
             start_time = gpd.GeoDataFrame.from_features(ret).iloc[0].iso_time
             year = dt.datetime.strptime(start_time, '%Y-%m-%dT%H:%M:%SZ').year
 
-            if year != storm_year:
-                print('storm_year wrong for {} {}'.format(storm_name, storm_year))
+            assert year == storm_year, 'storm_year wrong for {} {}'.format(storm_name, storm_year)
 
 
     def test_circle_perf(self):
