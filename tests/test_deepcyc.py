@@ -143,10 +143,7 @@ class TestDeepcyc():
         ret1 = self.dc.tcwind_returnvalues(lats, lons, return_periods,
                                              scenario='current_climate', time_horizon='now')
         assert 'DeepCyc Maps' in ret1['header']['product']
-        if location == 'Hawaii':
-            assert ret1['header']['simulation_years'] == 20500
-        else:
-            assert ret1['header']['simulation_years'] == 41000
+        assert ret1['header']['simulation_years'] == 41000
         df_now = gpd.GeoDataFrame.from_features(ret1)
 
         try:
