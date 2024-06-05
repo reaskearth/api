@@ -130,12 +130,20 @@ class TestDeepcyc():
         (-20.2, 148.97, 'Whitsunday Island'),
         (28.0, -82.5, 'Tampa'),
         (25.15, -80.735, 'Everglades'),
-        (19.332, -155.757, 'Hawaii')
+        (19.332, -155.757, 'Hawaii'),
+        (13.07, 80.27, 'Chennai')
     ])
     def test_tcwind_future_climate(self, scenario, time_horizon, min_lat, min_lon, location):
 
         if time_horizon == '2065' and location != 'Whitsunday Island':
             return
+
+        # FIXME support for all climate scenarios in West Asia
+        if location == 'Chennai':
+            if time_horizon != '2050':
+                return
+            if scenario != 'SSP5-8.5':
+                return
 
         lats, lons = generate_random_points(min_lat, min_lon)
         return_periods = [100]
