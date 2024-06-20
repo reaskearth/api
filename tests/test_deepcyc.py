@@ -241,7 +241,7 @@ class TestDeepcyc():
         Test maximum radius limitation for tctrack circle query
         """
         ret = self.dc.tctrack_events(lat, lon, 'circle', radius_km=180)
-        assert 'DeepCyc Events' in ret['header']['product']
+        assert 'DeepCyc Tracks' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
         assert len(df) > 23000
 
@@ -340,7 +340,7 @@ class TestDeepcyc():
     def test_tctrack_polygon(self, lats, lons):
         return_periods = [100, 200]
         ret = self.dc.tctrack_returnvalues(lats, lons, return_periods, 'polygon')
-        assert 'DeepCyc Maps' in ret['header']['product']
+        assert 'DeepCyc Tracks' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert len(df.wind_speed) == len(return_periods)
@@ -371,7 +371,7 @@ class TestDeepcyc():
         return_periods = [50, 100, 250, 500, 1000]
         ret = self.dc.tctrack_returnvalues(lats, lons, return_periods, 'line',
                                            scenario=scenario, time_horizon=time_horizon)
-        assert 'DeepCyc Maps' in ret['header']['product']
+        assert 'DeepCyc Tracks' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
         assert len(df) == 5
         assert ret['header']['scenario'] == scenario
