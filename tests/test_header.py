@@ -42,7 +42,7 @@ def call_all_endpoints_at_location(obj, lat, lon, **kwargs):
         r = obj.tctrack_returnvalues(lat, lon, 100, 'circle', radius_km=5, **kwargs)
         rets.append(r)
 
-        expected_product_names = ['DeepCyc Events', 'DeepCyc Events', 'DeepCyc Riskscores',
+        expected_product_names = ['DeepCyc Tracks', 'DeepCyc Events', 'DeepCyc Riskscores',
                                   'DeepCyc Maps', 'DeepCyc Maps', 'DeepCyc Tracks', 'DeepCyc Tracks']
 
 
