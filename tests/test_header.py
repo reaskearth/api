@@ -43,7 +43,7 @@ def call_all_endpoints_at_location(obj, lat, lon, **kwargs):
         rets.append(r)
 
         expected_product_names = ['DeepCyc Events', 'DeepCyc Events', 'DeepCyc Riskscores',
-                                  'DeepCyc Maps', 'DeepCyc Maps', 'DeepCyc Maps', 'DeepCyc Maps']
+                                  'DeepCyc Maps', 'DeepCyc Maps', 'DeepCyc Tracks', 'DeepCyc Tracks']
 
 
     return rets, expected_product_names
