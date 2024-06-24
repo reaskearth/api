@@ -100,7 +100,7 @@ class TestHeader:
 
         for ret in rets:
             if 'Metryc' in ret['header']['product']:
-                assert 'v1.0.4' in ret['header']['product']
+                assert 'v1.0.5' in ret['header']['product']
             else:
                 assert 'DeepCyc' in ret['header']['product']
                 assert 'v2.0.6' in ret['header']['product']
