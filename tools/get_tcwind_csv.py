@@ -178,22 +178,13 @@ def _get_hazard(all_lats, all_lons, location_ids=None,
                      product, scenario,
                      time_horizon, return_period)
 
-    # FIXME: API-112 we may get duplicates if there is more than one query
-    # within the same grid cell.
-    df = df.drop_duplicates()
+    assert (df.query_geometry.x == all_lons).all()
+    assert (df.query_geometry.y == all_lats).all()
 
-    # Do a spatial join to attach the query locations and location names
-    tmp_df = pd.DataFrame({'lat': all_lats, 'lon': all_lons})
+    df['lat'] = df.query_geometry.y
+    df['lon'] = df.query_geometry.x
     if location_ids is not None:
-        tmp_df[location_ids.name] = list(location_ids)
-        tmp_df.set_index(location_ids.name)
-
-    df_locs = gpd.GeoDataFrame(tmp_df, geometry=gpd.points_from_xy(all_lons, all_lats), crs="EPSG:4326")
-    df = df.set_crs(4326).sjoin(df_locs, predicate="intersects")
-    df.drop(['index_right'], axis=1, inplace=True)
-
-    assert (df.query_geometry.x == df.lon).all()
-    assert (df.query_geometry.y == df.lat).all()
+        df[location_ids.name] = list(location_ids)
 
     if convert_to_10_minute:
         df = convert_open_water_1minute_to_10minute(df)
@@ -413,6 +404,7 @@ def main():
         else:
             # Output to stdout
             df.to_csv(sys.stdout, index=False, index_label='index', header=not args.noheader)
+
         return 0
     else:
         return 1
