@@ -178,13 +178,21 @@ def _get_hazard(all_lats, all_lons, location_ids=None,
                      product, scenario,
                      time_horizon, return_period)
 
-    assert (df.query_geometry.x == all_lons).all()
-    assert (df.query_geometry.y == all_lats).all()
-
     df['lat'] = df.query_geometry.y
     df['lon'] = df.query_geometry.x
+
+    # Do a merge to attach the query locations and location names
     if location_ids is not None:
-        df[location_ids.name] = list(location_ids)
+        df_locs = pd.DataFrame({'lat': all_lats, 'lon': all_lons})
+        df_locs[location_ids.name] = list(location_ids)
+        df = pd.merge(df, df_locs, how='left', on=['lat', 'lon'])
+
+    if product == 'DeepCyc' and return_period is not None:
+        assert (df.query_geometry.x == all_lons).all()
+        assert (df.query_geometry.y == all_lats).all()
+    else:
+        assert set(df.query_geometry.x) == set(all_lons)
+        assert set(df.query_geometry.y) == set(all_lats)
 
     if convert_to_10_minute:
         df = convert_open_water_1minute_to_10minute(df)
