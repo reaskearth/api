@@ -5,6 +5,8 @@ import argparse
 import pandas as pd
 import numpy as np
 from math import ceil
+import shapely
+import json
 from shapely import Polygon, union_all
 from pathlib import Path
 import geopandas as gpd
@@ -93,6 +95,8 @@ def _do_queries_serially(all_lats, all_lons,
         assert ret['header']['wind_speed_averaging_period'] == wind_speed_averaging_period
 
         df = gpd.GeoDataFrame.from_features(ret)
+        df['query_geometry'] = df.apply(lambda x: shapely.from_geojson(json.dumps(x.query_geometry)), axis=1)
+
         df['wind_speed_averaging_period'] = ret['header']['wind_speed_averaging_period']
         df['terrain_correction'] = ret['header']['terrain_correction']
 
@@ -129,15 +133,24 @@ def _do_queries(all_lats, all_lons,
     else:
         num_procs = 1
 
-    with mp.Pool(num_procs) as pool:
-        dfs = pool.starmap(_do_queries_serially,
-                            zip(lats, lons,
-                               repeat(terrain_correction),
-                               repeat(wind_speed_averaging_period),
-                               repeat(product),
-                               repeat(scenario),
-                               repeat(time_horizon),
-                               repeat(return_period)))
+    if do_parallel:
+        with mp.Pool(num_procs) as pool:
+            dfs = pool.starmap(_do_queries_serially,
+                                zip(lats, lons,
+                                   repeat(terrain_correction),
+                                   repeat(wind_speed_averaging_period),
+                                   repeat(product),
+                                   repeat(scenario),
+                                   repeat(time_horizon),
+                                   repeat(return_period)))
+    else:
+        dfs = []
+        for lat, lon in zip(lats, lons):
+            df = _do_queries_serially(lat, lon, terrain_correction,
+                        wind_speed_averaging_period, product, scenario,
+                        time_horizon, return_period)
+            dfs.append(df)
+
 
     df = pd.concat(dfs, ignore_index=True)
     return df
@@ -165,19 +178,21 @@ def _get_hazard(all_lats, all_lons, location_ids=None,
                      product, scenario,
                      time_horizon, return_period)
 
-    # FIXME: API-112 we may get duplicates if there is more than one query
-    # within the same grid cell.
-    df = df.drop_duplicates()
+    df['lat'] = df.query_geometry.y
+    df['lon'] = df.query_geometry.x
 
-    # Do a spatial join to attach the query locations and location names
-    tmp_df = pd.DataFrame({'lat': all_lats, 'lon': all_lons})
+    # Do a merge to attach the query locations and location names
     if location_ids is not None:
-        tmp_df[location_ids.name] = list(location_ids)
-        tmp_df.set_index(location_ids.name)
+        df_locs = pd.DataFrame({'lat': all_lats, 'lon': all_lons})
+        df_locs[location_ids.name] = list(location_ids)
+        df = pd.merge(df, df_locs, how='left', on=['lat', 'lon'])
 
-    df_locs = gpd.GeoDataFrame(tmp_df, geometry=gpd.points_from_xy(all_lons, all_lats), crs="EPSG:4326")
-    df = df.set_crs(4326).sjoin(df_locs, predicate="intersects")
-    df.drop(['index_right'], axis=1, inplace=True)
+    if product == 'DeepCyc' and return_period is not None:
+        assert (df.query_geometry.x == all_lons).all()
+        assert (df.query_geometry.y == all_lats).all()
+    else:
+        assert set(df.query_geometry.x) == set(all_lons)
+        assert set(df.query_geometry.y) == set(all_lats)
 
     if convert_to_10_minute:
         df = convert_open_water_1minute_to_10minute(df)
@@ -397,6 +412,7 @@ def main():
         else:
             # Output to stdout
             df.to_csv(sys.stdout, index=False, index_label='index', header=not args.noheader)
+
         return 0
     else:
         return 1

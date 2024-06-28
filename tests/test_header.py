@@ -42,8 +42,8 @@ def call_all_endpoints_at_location(obj, lat, lon, **kwargs):
         r = obj.tctrack_returnvalues(lat, lon, 100, 'circle', radius_km=5, **kwargs)
         rets.append(r)
 
-        expected_product_names = ['DeepCyc Events', 'DeepCyc Events', 'DeepCyc Riskscores',
-                                  'DeepCyc Maps', 'DeepCyc Maps', 'DeepCyc Maps', 'DeepCyc Maps']
+        expected_product_names = ['DeepCyc Tracks', 'DeepCyc Events', 'DeepCyc Riskscores',
+                                  'DeepCyc Maps', 'DeepCyc Maps', 'DeepCyc Tracks', 'DeepCyc Tracks']
 
 
     return rets, expected_product_names
@@ -100,7 +100,7 @@ class TestHeader:
 
         for ret in rets:
             if 'Metryc' in ret['header']['product']:
-                assert 'v1.0.4' in ret['header']['product']
+                assert 'v1.0.5' in ret['header']['product']
             else:
                 assert 'DeepCyc' in ret['header']['product']
                 assert 'v2.0.6' in ret['header']['product']
