@@ -162,6 +162,53 @@ class TestMetryc():
         assert len(df) > 800
 
 
+    def test_list_with_agency(self):
+
+        ret = self.mc.historical_tcwind_list()
+        assert 'Metryc Historical' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        agencies = set([e.split('_')[4] for e in list(df.event_id)])
+        assert len(agencies) > 1
+
+        for agency in agencies:
+            ret = self.mc.historical_tcwind_list(agency=agency)
+            df = gpd.GeoDataFrame.from_features(ret)
+            assert set([e.split('_')[4] for e in list(df.event_id)]) == {agency}
+
+        # Select an invalid agency
+        try:
+            ret = self.mc.historical_tcwind_list(agency='INVALID')
+        except Exception as e:
+            assert 'HTTP 422' in str(e)
+
+
+    @pytest.mark.parametrize("agency", [
+        'USA',
+        'BOM',
+        'TOKYO'
+    ])
+    def test_footprint_with_agency(self, agency):
+        """
+        Get footprint of a live storm
+        """
+
+        ret = self.mc.historical_tcwind_list(agency=agency)
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        row = df.iloc[0]
+        min_lon, min_lat, max_lon, max_lat = row.geometry.bounds
+
+        ret = self.mc.historical_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
+                                                  storm_name=row.storm_name,
+                                                  storm_year=row.storm_year, agency=agency,
+                                                  format='geojson')
+        df = gpd.GeoDataFrame.from_features(ret)
+        import pdb
+        pdb.set_trace()
+
+
+
     @pytest.mark.parametrize("product", [
         'Live',
         'Historical'
@@ -179,10 +226,6 @@ class TestMetryc():
         assert product in ret['header']['product']
 
         df = gpd.GeoDataFrame.from_features(ret)
-        min_lon, min_lat, max_lon, max_lat = df.iloc[0].geometry.bounds
-        storm_name = df.iloc[0].storm_name
-        storm_year = df.iloc[0].storm_year
-
         row = df.iloc[0]
         min_lon, min_lat, max_lon, max_lat = row.geometry.bounds
 
