@@ -212,7 +212,7 @@ class TestDeepcyc():
         df_one = df[df.cell_id == df.iloc[0].cell_id]
         assert sorted(df_one.wind_speed) == list(df_one.wind_speed)
         assert list(df_one.return_period) == return_periods
-    
+
 
     def test_tcwind_calc_rp(self):
         """
@@ -251,11 +251,11 @@ class TestDeepcyc():
             err_msg = str(e)
 
         assert err_msg == "API returned HTTP 400 with 'circle' radius exceeds max 180 km"
-    
+
 
     @pytest.mark.parametrize("lat,lon", [
-        (27.7221, -82.7386), 
-        (29.09915, -95.02722), 
+        (27.7221, -82.7386),
+        (29.09915, -95.02722),
     ])
     def test_tctrack_central_pressure_circle(self, lat, lon):
 
@@ -278,7 +278,7 @@ class TestDeepcyc():
 
         assert set(df_vm.event_id) == set(df_cp.event_id), 'Inconsistent event ids'
 
- 
+
     @pytest.mark.parametrize("lat,lon", [
         (27.7221, -82.7386), 
         (29.09915, -95.02722), 
@@ -388,3 +388,28 @@ class TestDeepcyc():
                 assert ret['header']['simulation_years'] == 41000
             else:
                 assert ret['header']['simulation_years'] == 25000
+
+
+    def test_tctrack_returnvalues_polygon_geojson(self):
+        """
+        Use a GeoJSON file to query deepcyc tctracks
+
+        The example file was manually created using: https://geojson.io
+        """
+
+        return_periods = [50, 100, 250, 500]
+
+        input_df = gpd.read_file(Path(__file__).parent / 'florida.geojson')
+
+        assert isinstance(input_df.iloc[0].geometry,
+                            shapely.geometry.polygon.Polygon), \
+                'Unexpected shape in GeoJSON'
+
+        lons, lats = input_df.iloc[0].geometry.boundary.coords.xy
+        lons = lons.tolist()
+        lats = lats.tolist()
+
+        ret = self.dc.tctrack_returnvalues(lats, lons, return_periods, 'polygon')
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert (df.status == 'OK').all()
