@@ -28,7 +28,9 @@ class TestMetryc():
 
 
     @pytest.mark.parametrize("lats,lons,storm_name", [
-        ([26.95747, 25.0], [-82.06295, -82.1], 'Katrina')
+        ([26.95747, 25.0], [-82.06295, -82.1], 'Katrina'),
+        ([-16.5856], [178.898], 'Yasa'),
+        ([-20.2264804], [169.7780007], 'Yali')
     ])
     def test_tcwind_simple(self, lats, lons, storm_name):
         ret = self.mc.tcwind_events(lats, lons)
@@ -38,14 +40,18 @@ class TestMetryc():
 
     @pytest.mark.parametrize("lats,lons,status", [
         ([-17.6525, 30.6], [177.2634, -90.0], {'OK'}),
+        ([30, 24.0],[-93.0, -93.0], {'OK', 'NO CONTENT'}),
         ([24.0], [-93.0], {'NO CONTENT'}),
         ([30.6], [-90.0], {'OK'}),
-        ([30, 24.0],[-93.0, -93.0], {'OK', 'NO CONTENT'})])
+    ])
     def test_tcwind_status(self, lats, lons, status):
 
         ret = self.mc.tcwind_events(lats, lons, terrain_correction='open_water')
         df = gpd.GeoDataFrame.from_features(ret)
+        df['query_geometry'] = df.apply(lambda x: shapely.from_geojson(json.dumps(x.query_geometry)), axis=1)
 
+        assert set(df.query_geometry.x) == set(lons)
+        assert set(df.query_geometry.y) == set(lats)
         assert set(df.status) == status
 
 
@@ -159,6 +165,7 @@ class TestMetryc():
         assert 'Metryc Historical' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
+        assert len(df.event_id) == len(set(df.event_id))
         assert len(df) > 800
 
 
