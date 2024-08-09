@@ -249,7 +249,7 @@ class TestMetryc():
         except Exception as e:
             assert 'HTTP 422' in str(e)
 
-
+        api_call_succeeded = True
         try:
             ret = footprint_endpoint(min_lat, max_lat, min_lon, max_lon,
                                     storm_name=row.storm_name,
@@ -258,15 +258,21 @@ class TestMetryc():
                                     terrain_correction=terrain,
                                     format='geojson')
         except Exception as e:
-            assert 'HTTP 422' in str(e)
+            api_call_succeeded = False
+            assert 'HTTP 400' in str(e)
 
-        assert ret['header']['agency'] == agency
-        assert ret['header']['terrain_correction'] == terrain
-        assert ret['header']['wind_speed_averaging_period'] == ws_avg
+            if terrain == 'full_terrain_gust' and ws_avg != '3_seconds':
+                assert f'Unsupported terrain correction (full_terrain_gust) for given wind speed averaging period ({ws_avg})' in str(e)
+            else:
+                assert f'Unsupported wind speed averaging period ({ws_avg}) for given agency ({agency})' in str(e)
 
-        df = gpd.GeoDataFrame.from_features(ret)
-        assert len(df) > 1000
+        if api_call_succeeded:
+            assert ret['header']['agency'] == agency
+            assert ret['header']['terrain_correction'] == terrain
+            assert ret['header']['wind_speed_averaging_period'] == ws_avg
 
+            df = gpd.GeoDataFrame.from_features(ret)
+            assert len(df) > 1000
 
 
     @pytest.mark.parametrize("product", [
