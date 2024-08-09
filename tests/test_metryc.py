@@ -168,51 +168,104 @@ class TestMetryc():
         assert len(df.event_id) == len(set(df.event_id))
         assert len(df) > 800
 
+    @pytest.mark.parametrize("metryc_subproduct", [
+        'historical',
+        'live',
+    ])
+    @pytest.mark.parametrize("expected_agencies", [
+        ('USA', 'BOM', 'TOKYO')
+    ])
+    def test_list_with_agency(self, metryc_subproduct, expected_agencies):
 
-    def test_list_with_agency(self):
+        if metryc_subproduct == 'historical':
+            list_endpoint = self.mc.historical_tcwind_list
+        else:
+            assert metryc_subproduct == 'live'
+            list_endpoint = self.mc.live_tcwind_list
 
-        ret = self.mc.historical_tcwind_list()
-        assert 'Metryc Historical' in ret['header']['product']
+        ret = list_endpoint()
+        assert 'Metryc' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
         agencies = set([e.split('_')[4] for e in list(df.event_id)])
-        assert len(agencies) > 1
+        if metryc_subproduct == 'historical':
+            assert agencies == set(expected_agencies)
+        else:
+            # FIXME: add recent storms from other agencies
+            assert agencies == {'USA'}
 
         for agency in agencies:
-            ret = self.mc.historical_tcwind_list(agency=agency)
+            ret = list_endpoint(agency=agency)
             df = gpd.GeoDataFrame.from_features(ret)
             assert set([e.split('_')[4] for e in list(df.event_id)]) == {agency}
 
         # Select an invalid agency
         try:
-            ret = self.mc.historical_tcwind_list(agency='INVALID')
+            ret = list_endpoint(agency='INVALID')
         except Exception as e:
             assert 'HTTP 422' in str(e)
 
 
-    @pytest.mark.parametrize("agency", [
-        'USA',
-        'BOM',
-        'TOKYO'
+    @pytest.mark.parametrize("metryc_subproduct", [
+        'historical',
+        'live',
     ])
-    def test_footprint_with_agency(self, agency):
+    @pytest.mark.parametrize("agency", [
+        'USA', 'BOM', 'TOKYO'
+    ])
+    @pytest.mark.parametrize("ws_avg", [
+        '3_seconds',
+        '1_minute',
+        '10_minute',
+    ])
+    @pytest.mark.parametrize("terrain", [
+        'full_terrain_gust',
+        'open_water',
+        'open_terrain',
+    ])
+    def test_footprint_with_agency(self, metryc_subproduct, agency, ws_avg, terrain):
         """
         Get footprint of a live storm
         """
 
-        ret = self.mc.historical_tcwind_list(agency=agency)
+        if metryc_subproduct == 'historical':
+            list_endpoint = self.mc.historical_tcwind_list
+            footprint_endpoint = self.mc.historical_tcwind_footprint
+        else:
+            assert metryc_subproduct == 'live'
+            list_endpoint = self.mc.live_tcwind_list
+            footprint_endpoint = self.mc.live_tcwind_footprint
+            if agency != 'USA':
+                # FIXME: add recent storms from other agencies
+                return
+
+        ret = list_endpoint(agency=agency)
         df = gpd.GeoDataFrame.from_features(ret)
 
         row = df.iloc[0]
         min_lon, min_lat, max_lon, max_lat = row.geometry.bounds
+        try:
+            ret = list_endpoint(agency='INVALID')
+        except Exception as e:
+            assert 'HTTP 422' in str(e)
 
-        ret = self.mc.historical_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
-                                                  storm_name=row.storm_name,
-                                                  storm_year=row.storm_year, agency=agency,
-                                                  format='geojson')
+
+        try:
+            ret = footprint_endpoint(min_lat, max_lat, min_lon, max_lon,
+                                    storm_name=row.storm_name,
+                                    storm_year=row.storm_year, agency=agency,
+                                    wind_speed_averaging_period=ws_avg,
+                                    terrain_correction=terrain,
+                                    format='geojson')
+        except Exception as e:
+            assert 'HTTP 422' in str(e)
+
+        assert ret['header']['agency'] == agency
+        assert ret['header']['terrain_correction'] == terrain
+        assert ret['header']['wind_speed_averaging_period'] == ws_avg
+
         df = gpd.GeoDataFrame.from_features(ret)
-        import pdb
-        pdb.set_trace()
+        assert len(df) > 1000
 
 
 
