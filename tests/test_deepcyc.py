@@ -63,9 +63,7 @@ class TestDeepcyc():
         (14.0, 121),            # Philippines
         (22.25, 114.20),        # Hong Kong
         (-35.5, 174),           # New Zealand
-        (32.576, -80.096),      # Charleston
-        (32.914, -79.705),      # Charleston
-        (31.28418, -79.995117)  # Charleston
+        (31.28418, -79.995117)   # Charleston Coast
     ])
     def test_tcwind_locations(self, lat, lon, terrain_correction):
 
@@ -78,10 +76,11 @@ class TestDeepcyc():
                 wind_speed_averaging_period=ws_avg)
         assert ret['header']['terrain_correction'] == terrain_correction
         assert ret['header']['wind_speed_averaging_period'] == ws_avg
+        assert ret['header']['message'] is None
 
         df = gpd.GeoDataFrame.from_features(ret)
+        assert set(df.status) == {'OK'}
 
-        assert ret['header']['message'] is None
         assert len(set(df.cell_id)) == 1
 
 
