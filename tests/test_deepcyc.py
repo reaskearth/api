@@ -51,19 +51,36 @@ class TestDeepcyc():
         assert len(set(df.cell_id)) == 1
 
 
+    @pytest.mark.parametrize("terrain_correction", [
+        'full_terrain_gust',
+        'open_water',
+        'open_terrain'
+    ])
     @pytest.mark.parametrize("lat,lon", [
         (-17.68298, 177.2756),  # Fiji
         (31.6938, -85.1774),    # CONUS
         (-20.35685, 148.95112), # Australia
         (14.0, 121),            # Philippines
         (22.25, 114.20),        # Hong Kong
-        (-35.5, 174)            # New Zealand
+        (-35.5, 174),           # New Zealand
+        (31.28418, -79.995117)   # Charleston Coast
     ])
-    def test_tcwind_locations(self, lat, lon):
-        ret = self.dc.tcwind_returnvalues(lat, lon, [100])
-        df = gpd.GeoDataFrame.from_features(ret)
+    def test_tcwind_locations(self, lat, lon, terrain_correction):
 
+        if terrain_correction == 'full_terrain_gust':
+            ws_avg = '3_seconds'
+        else:
+            ws_avg = '1_minute'
+        ret = self.dc.tcwind_returnvalues(lat, lon, [10, 100],
+                terrain_correction=terrain_correction,
+                wind_speed_averaging_period=ws_avg)
+        assert ret['header']['terrain_correction'] == terrain_correction
+        assert ret['header']['wind_speed_averaging_period'] == ws_avg
         assert ret['header']['message'] is None
+
+        df = gpd.GeoDataFrame.from_features(ret)
+        assert set(df.status) == {'OK'}
+
         assert len(set(df.cell_id)) == 1
 
 
