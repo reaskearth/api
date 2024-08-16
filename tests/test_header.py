@@ -103,4 +103,4 @@ class TestHeader:
                 assert 'v1.0.5' in ret['header']['product']
             else:
                 assert 'DeepCyc' in ret['header']['product']
-                assert 'v2.0.6' in ret['header']['product']
+                assert 'v2.0.7' in ret['header']['product']

@@ -28,7 +28,9 @@ class TestMetryc():
 
 
     @pytest.mark.parametrize("lats,lons,storm_name", [
-        ([26.95747, 25.0], [-82.06295, -82.1], 'Katrina')
+        ([26.95747, 25.0], [-82.06295, -82.1], 'Katrina'),
+        ([-16.5856], [178.898], 'Yasa'),
+        ([-20.2264804], [169.7780007], 'Yali')
     ])
     def test_tcwind_simple(self, lats, lons, storm_name):
         ret = self.mc.tcwind_events(lats, lons)
@@ -38,14 +40,18 @@ class TestMetryc():
 
     @pytest.mark.parametrize("lats,lons,status", [
         ([-17.6525, 30.6], [177.2634, -90.0], {'OK'}),
+        ([30, 24.0],[-93.0, -93.0], {'OK', 'NO CONTENT'}),
         ([24.0], [-93.0], {'NO CONTENT'}),
         ([30.6], [-90.0], {'OK'}),
-        ([30, 24.0],[-93.0, -93.0], {'OK', 'NO CONTENT'})])
+    ])
     def test_tcwind_status(self, lats, lons, status):
 
         ret = self.mc.tcwind_events(lats, lons, terrain_correction='open_water')
         df = gpd.GeoDataFrame.from_features(ret)
+        df['query_geometry'] = df.apply(lambda x: shapely.from_geojson(json.dumps(x.query_geometry)), axis=1)
 
+        assert set(df.query_geometry.x) == set(lons)
+        assert set(df.query_geometry.y) == set(lats)
         assert set(df.status) == status
 
 
@@ -159,7 +165,114 @@ class TestMetryc():
         assert 'Metryc Historical' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
+        assert len(df.event_id) == len(set(df.event_id))
         assert len(df) > 800
+
+    @pytest.mark.parametrize("metryc_subproduct", [
+        'historical',
+        'live',
+    ])
+    @pytest.mark.parametrize("expected_agencies", [
+        ('USA', 'BOM', 'TOKYO')
+    ])
+    def test_list_with_agency(self, metryc_subproduct, expected_agencies):
+
+        if metryc_subproduct == 'historical':
+            list_endpoint = self.mc.historical_tcwind_list
+        else:
+            assert metryc_subproduct == 'live'
+            list_endpoint = self.mc.live_tcwind_list
+
+        ret = list_endpoint()
+        assert 'Metryc' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        agencies = set([e.split('_')[4] for e in list(df.event_id)])
+        if metryc_subproduct == 'historical':
+            assert agencies == set(expected_agencies)
+        else:
+            # FIXME: add recent storms from other agencies
+            assert agencies == {'USA'}
+
+        for agency in agencies:
+            ret = list_endpoint(agency=agency)
+            df = gpd.GeoDataFrame.from_features(ret)
+            assert set([e.split('_')[4] for e in list(df.event_id)]) == {agency}
+
+        # Select an invalid agency
+        try:
+            ret = list_endpoint(agency='INVALID')
+        except Exception as e:
+            assert 'HTTP 422' in str(e)
+
+
+    @pytest.mark.parametrize("metryc_subproduct", [
+        'historical',
+        'live',
+    ])
+    @pytest.mark.parametrize("agency", [
+        'USA', 'BOM', 'TOKYO'
+    ])
+    @pytest.mark.parametrize("ws_avg", [
+        '3_seconds',
+        '1_minute',
+        '10_minute',
+    ])
+    @pytest.mark.parametrize("terrain", [
+        'full_terrain_gust',
+        'open_water',
+        'open_terrain',
+    ])
+    def test_footprint_with_agency(self, metryc_subproduct, agency, ws_avg, terrain):
+        """
+        Get footprint of a live storm
+        """
+
+        if metryc_subproduct == 'historical':
+            list_endpoint = self.mc.historical_tcwind_list
+            footprint_endpoint = self.mc.historical_tcwind_footprint
+        else:
+            assert metryc_subproduct == 'live'
+            list_endpoint = self.mc.live_tcwind_list
+            footprint_endpoint = self.mc.live_tcwind_footprint
+            if agency != 'USA':
+                # FIXME: add recent storms from other agencies
+                return
+
+        ret = list_endpoint(agency=agency)
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        row = df.iloc[0]
+        min_lon, min_lat, max_lon, max_lat = row.geometry.bounds
+        try:
+            ret = list_endpoint(agency='INVALID')
+        except Exception as e:
+            assert 'HTTP 422' in str(e)
+
+        api_call_succeeded = True
+        try:
+            ret = footprint_endpoint(min_lat, max_lat, min_lon, max_lon,
+                                    storm_name=row.storm_name,
+                                    storm_year=row.storm_year, agency=agency,
+                                    wind_speed_averaging_period=ws_avg,
+                                    terrain_correction=terrain,
+                                    format='geojson')
+        except Exception as e:
+            api_call_succeeded = False
+            assert 'HTTP 400' in str(e)
+
+            if terrain == 'full_terrain_gust' and ws_avg != '3_seconds':
+                assert f'Unsupported terrain correction (full_terrain_gust) for given wind speed averaging period ({ws_avg})' in str(e)
+            else:
+                assert f'Unsupported wind speed averaging period ({ws_avg}) for given agency ({agency})' in str(e)
+
+        if api_call_succeeded:
+            assert ret['header']['agency'] == agency
+            assert ret['header']['terrain_correction'] == terrain
+            assert ret['header']['wind_speed_averaging_period'] == ws_avg
+
+            df = gpd.GeoDataFrame.from_features(ret)
+            assert len(df) > 1000
 
 
     @pytest.mark.parametrize("product", [
@@ -179,23 +292,20 @@ class TestMetryc():
         assert product in ret['header']['product']
 
         df = gpd.GeoDataFrame.from_features(ret)
-        min_lon, min_lat, max_lon, max_lat = df.iloc[0].geometry.bounds
         storm_name = df.iloc[0].storm_name
         storm_year = df.iloc[0].storm_year
-
-        row = df.iloc[0]
-        min_lon, min_lat, max_lon, max_lat = row.geometry.bounds
+        min_lon, min_lat, max_lon, max_lat = df.iloc[0].geometry.bounds
 
         if product == 'Live':
             ret = self.mc.live_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
-                                                storm_name=row.storm_name,
-                                                storm_year=row.storm_year, format='geojson')
+                                                storm_name=storm_name,
+                                                storm_year=storm_year, format='geojson')
             assert 'Metryc Live' in ret['header']['product']
             assert len(ret['features']) >= 1
         else:
             ret = self.mc.historical_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
-                                                      storm_name=row.storm_name,
-                                                      storm_year=row.storm_year, format='geojson')
+                                                      storm_name=storm_name,
+                                                      storm_year=storm_year, format='geojson')
             assert 'Metryc Historical' in ret['header']['product']
             assert len(ret['features']) > 1000
 
