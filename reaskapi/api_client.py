@@ -101,6 +101,10 @@ class ApiClient:
         Base method to send authenticated calls to the API HTTP endpoints
         """
 
+        if 'product_version' in param_args:
+            self.headers['product-version'] = param_args['product_version']
+            del param_args['product_version']
+
         # Normalise/fix deprecated parameters
         params = param_args.copy()
         for k in param_args.keys():
