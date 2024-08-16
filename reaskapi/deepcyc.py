@@ -4,13 +4,13 @@ from reaskapi.api_client import ApiClient, ClientConfig
 
 class DeepCyc(ApiClient):
 
-    def __init__(self, config_section='default', product_version='DeepCyc-2.0.7'):
+    def __init__(self, config_section='default', product_version=None):
         """(deprecated) Initialize DeepCyc class"""
         super().__init__('DeepCyc', config_section=config_section,
                             product_version=product_version)
 
 
-    def __init__(self, config: ClientConfig = None, product_version='DeepCyc-2.0.7'):
+    def __init__(self, config: ClientConfig = None, product_version=None):
         """Initialize DeepCyc class by ClientConfig object"""
         super().__init__('DeepCyc', config=config,
                             product_version=product_version)
