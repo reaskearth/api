@@ -17,7 +17,7 @@ from reaskapi.metryc import Metryc
 
 LAT_NAMES = ['latitude', 'Latitude', 'lat', 'Lat', 'latitude_nr']
 LON_NAMES = ['longitude', 'Longitude', 'lon', 'Lon', 'longitude_nr']
-LOCATION_IDS = ['unique_id', 'location_id', 'location', 'Location', 'locationName']
+LOCATION_IDS = ['unique_id', 'location_id', 'location', 'locationname', 'location_name']
 RKG_RES = 2**-7 + 2**-9
 
 def convert_open_water_1minute_to_10minute(df):
@@ -123,7 +123,7 @@ def _do_queries(all_lats, all_lons,
     import multiprocessing as mp
     from itertools import repeat
 
-    num_calls = ceil(len(all_lats) / 1000)
+    num_calls = ceil(len(all_lats) / 10)
     lats = np.array_split(all_lats, num_calls)
     lons = np.array_split(all_lons, num_calls)
 
@@ -387,9 +387,10 @@ def main():
         lons = list(input_df[lon_col_name])
 
         location_id_col = None
+        col_names = [col.lower() for col in input_df.columns]
         for tmp_name in LOCATION_IDS:
-            if tmp_name in input_df.columns:
-                location_id_col= tmp_name
+            if tmp_name in col_names:
+                location_id_col = input_df.columns[col_names.index(tmp_name)]
 
         location_ids = None
         if location_id_col is not None:
