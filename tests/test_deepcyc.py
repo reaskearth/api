@@ -33,6 +33,9 @@ def generate_random_points(min_lat, min_lon, max_lat=None, max_lon=None, n_point
 
 class TestDeepcyc():
     dc = DeepCyc()
+    dc_v206 = DeepCyc(product_version='DeepCyc-2.0.6')
+    dc_v207 = DeepCyc(product_version='DeepCyc-2.0.7')
+    dc_v208 = DeepCyc(product_version='DeepCyc-2.0.8')
 
     @pytest.mark.parametrize("lat,lon", [
         (19.71538, -155.544),  # Hawaii
@@ -370,39 +373,39 @@ class TestDeepcyc():
     def test_tctrack_compare_versions(self, lats, lons, geometry, radius_km):
 
         # tctrack events endpoint
-        ret = self.dc.tctrack_events(lats, lons, geometry, radius_km=radius_km, product_version='DeepCyc-2.0.6')
+        ret = self.dc_v206.tctrack_events(lats, lons, geometry, radius_km=radius_km)
         assert ret['header']['product'] == 'DeepCyc Tracks v2.0.6'
         assert ret['header']['simulation_years'] == 41000
-        df_206 = gpd.GeoDataFrame.from_features(ret)
+        df_v206 = gpd.GeoDataFrame.from_features(ret)
 
-        ret = self.dc.tctrack_events(lats, lons, geometry, radius_km=radius_km, product_version='DeepCyc-2.0.7')
+        ret = self.dc_v207.tctrack_events(lats, lons, geometry, radius_km=radius_km)
         assert ret['header']['product'] == 'DeepCyc Tracks v2.0.7'
         assert ret['header']['simulation_years'] == 41000
-        df_207 = gpd.GeoDataFrame.from_features(ret)
+        df_v207 = gpd.GeoDataFrame.from_features(ret)
 
-        assert (df_206 == df_207).all().all()
-        assert sorted(df_206.year_id)[0].split('_')[0] == '1980'
-        assert sorted(df_206.year_id)[-1].split('_')[0] == '2020'
+        assert (df_v206 == df_v207).all().all()
+        assert sorted(df_v207.year_id)[0].split('_')[0] == '1980'
+        assert sorted(df_v207.year_id)[-1].split('_')[0] == '2020'
 
-        ret = self.dc.tctrack_events(lats, lons, geometry, radius_km=radius_km, product_version='DeepCyc-2.0.8')
+        ret = self.dc_v208.tctrack_events(lats, lons, geometry, radius_km=radius_km)
         assert ret['header']['product'] == 'DeepCyc Tracks v2.0.8'
         assert ret['header']['simulation_years'] == 66000
-        df_208 = gpd.GeoDataFrame.from_features(ret)
+        df_v208 = gpd.GeoDataFrame.from_features(ret)
 
-        assert set(df_206.event_id).issubset(df_208.event_id)
-        assert sorted(df_208.year_id)[0].split('_')[0] == '1980'
-        assert sorted(df_208.year_id)[-1].split('_')[0] == '2023'
+        assert set(df_v206.event_id).issubset(df_v208.event_id)
+        assert sorted(df_v208.year_id)[0].split('_')[0] == '1980'
+        assert sorted(df_v208.year_id)[-1].split('_')[0] == '2023'
 
         # tctrack returnvalues endpoint
-        ret = self.dc.tctrack_returnvalues(lats, lons, [100, 1000, 5000], geometry,
-                                            radius_km=radius_km, product_version='DeepCyc-2.0.7')
-        df_207 = gpd.GeoDataFrame.from_features(ret)
-        ret = self.dc.tctrack_returnvalues(lats, lons, [100, 1000, 5000], geometry,
-                                            radius_km=radius_km, product_version='DeepCyc-2.0.8')
-        df_208 = gpd.GeoDataFrame.from_features(ret)
+        ret = self.dc_v207.tctrack_returnvalues(lats, lons, [100, 1000, 5000], geometry,
+                                            radius_km=radius_km)
+        df_v207 = gpd.GeoDataFrame.from_features(ret)
+        ret = self.dc_v208.tctrack_returnvalues(lats, lons, [100, 1000, 5000], geometry,
+                                            radius_km=radius_km)
+        df_v208 = gpd.GeoDataFrame.from_features(ret)
 
         # Expect less than a 2% difference in return values between the versions
-        assert ((abs(df_207.wind_speed - df_208.wind_speed) / df_208.wind_speed) < 0.02).all()
+        assert ((abs(df_v207.wind_speed - df_v208.wind_speed) / df_v208.wind_speed) < 0.02).all()
 
 
     @pytest.mark.parametrize("min_lat,max_lat,min_lon,max_lon,n_points,return_periods,label", [
@@ -414,29 +417,29 @@ class TestDeepcyc():
         # Creates sample points
         lats, lons = generate_random_points(min_lat, min_lon, max_lat, max_lon, n_points)
 
-        ret = self.dc.tcwind_returnvalues(lats, lons, return_periods, product_version='DeepCyc-2.0.6')
+        ret = self.dc_v206.tcwind_returnvalues(lats, lons, return_periods)
         assert ret['header']['product'] == 'DeepCyc Maps v2.0.6'
         assert ret['header']['simulation_years'] == 41000
-        df_206 = gpd.GeoDataFrame.from_features(ret)
+        df_v206 = gpd.GeoDataFrame.from_features(ret)
 
-        ret = self.dc.tcwind_returnvalues(lats, lons, return_periods, product_version='DeepCyc-2.0.7')
+        ret = self.dc_v207.tcwind_returnvalues(lats, lons, return_periods)
         assert ret['header']['product'] == 'DeepCyc Maps v2.0.7'
         assert ret['header']['simulation_years'] == 41000
-        df_207 = gpd.GeoDataFrame.from_features(ret)
+        df_v207 = gpd.GeoDataFrame.from_features(ret)
 
-        assert (df_206 == df_207).all().all()
+        assert (df_v206 == df_v207).all().all()
 
-        ret = self.dc.tcwind_returnvalues(lats, lons, return_periods, product_version='DeepCyc-2.0.8')
+        ret = self.dc_v208.tcwind_returnvalues(lats, lons, return_periods)
         assert ret['header']['product'] == 'DeepCyc Maps v2.0.8'
         assert ret['header']['simulation_years'] == 66000
-        df_208 = gpd.GeoDataFrame.from_features(ret)
+        df_v208 = gpd.GeoDataFrame.from_features(ret)
 
         if label == 'Taveuni_Island':
             # The newest version has terrain fixes in this limited region
-            assert (abs(df_207.wind_speed - df_208.wind_speed) / df_208.wind_speed).max() > 0.1
+            assert (abs(df_v207.wind_speed - df_v208.wind_speed) / df_v208.wind_speed).max() > 0.1
         else:
             # Expect less than a 5% difference in return values between the versions
-            assert ((abs(df_207.wind_speed - df_208.wind_speed) / df_208.wind_speed) < 0.05).all()
+            assert ((abs(df_v207.wind_speed - df_v208.wind_speed) / df_v208.wind_speed) < 0.05).all()
 
 
     @pytest.mark.parametrize("scenario,time_horizon", [

@@ -30,7 +30,7 @@ class ApiClient:
         'storm_season': 'storm_year'
     }
 
-    def __init__(self, product, config_section='default'):
+    def __init__(self, product, config_section='default', product_version=None):
         """
         (deprecated) Initialize client getting access token
         """
@@ -41,7 +41,10 @@ class ApiClient:
         self.headers = {'Content-Type':'application/json',
              'Authorization': f'Bearer {self.access_token}'}
 
-    def __init__(self, product, config: ClientConfig=None):
+        if product_version:
+            self.headers['product-version'] = product_version
+
+    def __init__(self, product, config: ClientConfig=None, product_version=None):
         """
         Initialize client by ClientConfig
         """
@@ -53,6 +56,10 @@ class ApiClient:
 
         self.headers = {'Content-Type':'application/json',
              'Authorization': f'Bearer {self.access_token}'}
+
+        if product_version:
+            self.headers['product-version'] = product_version
+
 
 
     def tcwind_events(self, lat, lon, **kwargs):
@@ -100,10 +107,6 @@ class ApiClient:
         """
         Base method to send authenticated calls to the API HTTP endpoints
         """
-
-        if 'product_version' in param_args:
-            self.headers['product-version'] = param_args['product_version']
-            del param_args['product_version']
 
         # Normalise/fix deprecated parameters
         params = param_args.copy()
