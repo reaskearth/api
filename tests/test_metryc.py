@@ -292,19 +292,20 @@ class TestMetryc():
         assert product in ret['header']['product']
 
         df = gpd.GeoDataFrame.from_features(ret)
-        row = df.iloc[0]
-        min_lon, min_lat, max_lon, max_lat = row.geometry.bounds
+        storm_name = df.iloc[0].storm_name
+        storm_year = df.iloc[0].storm_year
+        min_lon, min_lat, max_lon, max_lat = df.iloc[0].geometry.bounds
 
         if product == 'Live':
             ret = self.mc.live_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
-                                                storm_name=row.storm_name,
-                                                storm_year=row.storm_year, format='geojson')
+                                                storm_name=storm_name,
+                                                storm_year=storm_year, format='geojson')
             assert 'Metryc Live' in ret['header']['product']
             assert len(ret['features']) >= 1
         else:
             ret = self.mc.historical_tcwind_footprint(min_lat, max_lat, min_lon, max_lon,
-                                                      storm_name=row.storm_name,
-                                                      storm_year=row.storm_year, format='geojson')
+                                                      storm_name=storm_name,
+                                                      storm_year=storm_year, format='geojson')
             assert 'Metryc Historical' in ret['header']['product']
             assert len(ret['features']) > 1000
 
