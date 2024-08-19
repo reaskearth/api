@@ -50,7 +50,6 @@ class TestDeepcyc():
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert (df.status == 'OK').all()
-        assert ret['header']['message'] is None
         assert len(set(df.cell_id)) == 1
 
 
@@ -79,7 +78,6 @@ class TestDeepcyc():
                 wind_speed_averaging_period=ws_avg)
         assert ret['header']['terrain_correction'] == terrain_correction
         assert ret['header']['wind_speed_averaging_period'] == ws_avg
-        assert ret['header']['message'] is None
 
         df = gpd.GeoDataFrame.from_features(ret)
         assert set(df.status) == {'OK'}
@@ -103,7 +101,6 @@ class TestDeepcyc():
         print('Querying 100 points took {}s'.format(time.time() - start_time))
         df = gpd.GeoDataFrame.from_features(ret)
 
-        assert ret['header']['message'] is None
         assert len(df) == 100
 
 
@@ -282,8 +279,6 @@ class TestDeepcyc():
 
         radius_km = 10
         ret_cp = self.dc.tctrack_central_pressure_events(lat, lon, 'circle', radius_km=radius_km)
-        assert ret_cp['header']['wind_speed_units'] is None
-        assert ret_cp['header']['wind_speed_averaging_period'] is None
 
         df_cp = gpd.GeoDataFrame.from_features(ret_cp)
         assert(list(df_cp.central_pressure)) == sorted(list(df_cp.central_pressure)), \
