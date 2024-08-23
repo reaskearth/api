@@ -364,6 +364,7 @@ class TestDeepcyc():
 
     @pytest.mark.parametrize("lats,lons,geometry,radius_km", [
         (-17.011, 178, 'circle', 50),
+        ([25, 26], [-80, -80], 'line', None),
     ])
     def test_tctrack_compare_versions(self, lats, lons, geometry, radius_km):
 
