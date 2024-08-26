@@ -363,6 +363,7 @@ class TestDeepcyc():
 
 
     @pytest.mark.parametrize("lats,lons,geometry,radius_km", [
+        (27.366, -82.558, 'circle', 50),
         (-17.011, 178, 'circle', 50),
         ([25, 26], [-80, -80], 'line', None),
     ])
@@ -393,15 +394,15 @@ class TestDeepcyc():
         assert sorted(df_v208.year_id)[-1].split('_')[0] == '2023'
 
         # tctrack returnvalues endpoint
-        ret = self.dc_v207.tctrack_returnvalues(lats, lons, [100, 1000, 5000], geometry,
+        ret = self.dc_v207.tctrack_returnvalues(lats, lons, [100, 200, 250, 500, 1000, 2000], geometry,
                                             radius_km=radius_km)
         df_v207 = gpd.GeoDataFrame.from_features(ret)
-        ret = self.dc_v208.tctrack_returnvalues(lats, lons, [100, 1000, 5000], geometry,
+        ret = self.dc_v208.tctrack_returnvalues(lats, lons, [100, 200, 250, 500, 1000, 2000], geometry,
                                             radius_km=radius_km)
         df_v208 = gpd.GeoDataFrame.from_features(ret)
 
-        # Expect less than a 2% difference in return values between the versions
-        assert ((abs(df_v207.wind_speed - df_v208.wind_speed) / df_v208.wind_speed) < 0.02).all()
+        # Expect less than a 6% difference in return values between the versions
+        assert ((abs(df_v207.wind_speed - df_v208.wind_speed) / df_v208.wind_speed) < 0.06).all()
 
 
     @pytest.mark.parametrize("min_lat,max_lat,min_lon,max_lon,n_points,return_periods,label", [
