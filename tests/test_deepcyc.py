@@ -155,13 +155,6 @@ class TestDeepcyc():
         if time_horizon == '2065' and location != 'Whitsunday Island':
             return
 
-        # FIXME support for all climate scenarios in West Asia
-        if location == 'Chennai':
-            if time_horizon != '2050':
-                return
-            if scenario != 'SSP5-8.5':
-                return
-
         lats, lons = generate_random_points(min_lat, min_lon)
         return_periods = [100]
 

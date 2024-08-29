@@ -310,7 +310,7 @@ class TestMetryc():
             assert len(ret['features']) > 1000
 
         assert ret['header']['storm_name'] == storm_name
-        assert int(ret['header']['storm_year']) == storm_year
+        assert ret['header']['storm_year'] == f"{storm_year}"
 
     def test_tctrack_points(self):
 
