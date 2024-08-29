@@ -308,7 +308,7 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
 def main():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--output_filename', required=False, default=None,
+    parser.add_argument('--output_filename', required=False, default=None, type=Path,
                         help="Name of the output CSV file, otherwise output to stdout")
     parser.add_argument('--product', required=False, default='DeepCyc',
                         help="Name of the product to query. DeepCyc or Metryc.")
@@ -337,6 +337,9 @@ def main():
                          help="Put a halo of <size> grid cells around the requested locations.")
     parser.add_argument('--noheader', required=False, action='store_true', default=False,
                          help="Don't add CSV header line to output")
+    parser.add_argument('--chunksize', required=False, default=0, type=int,
+                         help="Break output into <chunksize> locations and write out into multiple files.")
+
 
 
     args = parser.parse_args()
@@ -354,7 +357,7 @@ def main():
     if args.halo_size > 0:
         assert args.regrid_resolution == 1, "Halo and regrid options can't be used together"
 
-    if args.output_filename is not None and Path(args.output_filename).exists():
+    if args.output_filename is not None and args.output_filename.exists():
         print(f'Error: output file {args.output_filename} already exists.', file=sys.stderr)
         return 1
 
@@ -398,25 +401,41 @@ def main():
             assert len(location_ids) == len(location_ids.unique()), \
                 'Location ids are not unique'
 
-    df = get_hazard_with_resolution_or_halo(lats, lons,
-            location_ids, args.terrain_correction, args.wind_speed_averaging_period,
-            scenario=args.scenario, time_horizon=args.time_horizon,
-            product=args.product, return_period=args.return_period,
-            regrid_res=args.regrid_resolution,
-            regrid_op=args.regrid_operation,
-            halo_size=args.halo_size)
+    if args.chunksize != 0:
+        num_calls = ceil(len(lats) / args.chunksize)
+    else:
+        num_calls = 1
 
-    if df is not None:
+    ret = 0
+    for chunk, (loc_ids, ch_lats, ch_lons) in \
+            enumerate(zip(np.array_split(location_ids, num_calls),
+                          np.array_split(lats, num_calls),
+                          np.array_split(lons, num_calls))):
+        df = get_hazard_with_resolution_or_halo(ch_lats, ch_lons,
+                loc_ids, args.terrain_correction, args.wind_speed_averaging_period,
+                scenario=args.scenario, time_horizon=args.time_horizon,
+                product=args.product, return_period=args.return_period,
+                regrid_res=args.regrid_resolution,
+                regrid_op=args.regrid_operation,
+                halo_size=args.halo_size)
+
+        if df is None:
+            ret += 1
+            continue
+
         if args.output_filename is not None:
+            if num_calls == 1:
+                output_filename = args.output_filename
+            else:
+                output_filename = args.output_filename.parent / '{}_{}{}'.format(args.output_filename.stem, chunk, args.output_filename.suffix)
             # Output to file
-            df.to_csv(args.output_filename, index=False, index_label='index', header=not args.noheader)
+            print('Writing {}'.format(output_filename))
+            df.to_csv(output_filename, index=False, index_label='index', header=not args.noheader)
         else:
             # Output to stdout
             df.to_csv(sys.stdout, index=False, index_label='index', header=not args.noheader)
 
-        return 0
-    else:
-        return 1
+    return ret
 
 
 if __name__ == '__main__':
