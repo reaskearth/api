@@ -245,7 +245,7 @@ class TestDeepcyc():
 
 
     @pytest.mark.parametrize("lat,lon", [
-        (34.076463, -84.652037), 
+        (34.076463, -84.652037),
     ])
     def test_tctrack_max_radius(self, lat, lon):
         """
@@ -396,6 +396,35 @@ class TestDeepcyc():
 
         # Expect less than a 6% difference in return values between the versions
         assert ((abs(df_v207.wind_speed - df_v208.wind_speed) / df_v208.wind_speed) < 0.06).all()
+
+
+    @pytest.mark.parametrize("lats,lons,geometry,radius_km", [
+        (26, -81, 'circle', 2),
+        (27.366, -82.558, 'circle', 20),
+        ([29.75, 30, 30, 29.75, 29.75], [-91, -91, -90.75, -90.75, -91], 'polygon', None),
+    ])
+    def test_tcwind_eventstats(self, lats, lons, geometry, radius_km):
+
+        ret = self.dc.tcwind_eventstats(lats, lons, geometry, radius_km=radius_km)
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        # All event ids are unique
+        assert len(set(df.event_id)) == len(df.event_id)
+
+        # geometry is in the middle of a cell
+        rkg_res = 2**-7 + 2**-9
+        top_lat = df.iloc[0].geometry.y
+        top_lon = df.iloc[0].geometry.x
+        assert (top_lat / rkg_res) % 1 == 0.5
+        assert (top_lon / rkg_res) % 1 == 0.5
+
+        # Check the wind speed
+        ret = self.dc.tcwind_events(top_lat, top_lon)
+        chk_df = gpd.GeoDataFrame.from_features(ret)
+
+        top_ws = df.iloc[0].max_wind_speed
+        top_event_id = df.iloc[0].event_id
+        assert chk_df[chk_df.event_id == top_event_id].wind_speed.item() == top_ws
 
 
     @pytest.mark.parametrize("min_lat,max_lat,min_lon,max_lon,n_points,return_periods,label", [
