@@ -54,6 +54,18 @@ class DeepCyc(ApiClient):
 
         return self._call_api(params, 'deepcyc/tcwind/payout', 'POST', post_data)
 
+
+    def tcwind_eventstats(self, lat, lon, geometry, **kwargs):
+
+        params = kwargs.copy()
+        params['lat'] = lat
+        params['lon'] = lon
+        params['geometry'] = geometry
+        self.logger.debug(f'Parameters: {params}')
+
+        return self._call_api(params, f'deepcyc/tcwind/eventstats')
+
+
     def tctrack_returnperiods(self, lat, lon, return_value, geometry, **kwargs):
 
         params = kwargs.copy()
