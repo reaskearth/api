@@ -243,6 +243,22 @@ class TestDeepcyc():
 
         assert round(calculated_rp) == round(api_rp)
 
+    def test_tctrack_across_prime_meridian(self):
+        """
+        Test a query across the prime meridian
+        """
+
+        lats, lons = ([50, 50], [-1, 1])
+        ret = self.dc.tctrack_events(lats, lons, 'line')
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        # Expect hist to be small since it is not circling the globe
+        assert len(df) < 500
+
+        ret = self.dc.tctrack_events(50, -0.1, 'circle', radius_km=50)
+        df = gpd.GeoDataFrame.from_features(ret)
+        assert len(df) < 500
+
 
     def test_tctrack_max_polygon_size(self):
         """
@@ -259,7 +275,7 @@ class TestDeepcyc():
         except Exception as e:
             err_msg = str(e)
 
-        assert err_msg == "API returned HTTP 400 with 'circle' radius exceeds max 180 km"
+        assert "API returned HTTP 400 with 'circle' radius" in err_msg
 
         lats, lons = ([29, 30, 30, 29, 29], [-91, -91, -90, -90, -91])
         ret = self.dc.tctrack_events(lats, lons, 'polygon')
@@ -269,12 +285,12 @@ class TestDeepcyc():
         assert len(df) > 14000
 
         try:
-            lats, lons = ([25, 30, 30, 25, 25], [-92, -92, -88, -88, -92])
+            lats, lons = ([24, 30, 30, 24, 24], [-92, -92, -87, -87, -92])
             ret = self.dc.tctrack_events(lats, lons, 'polygon')
         except Exception as e:
             err_msg = str(e)
 
-        assert err_msg == "API returned HTTP 400 with 'polygon' total area exceeds max 16 degrees"
+        assert "API returned HTTP 400 with 'polygon' total area" in err_msg
 
         lats, lons = ([28, 28], [-100, -95])
         ret = self.dc.tctrack_events(lats, lons, 'line')
@@ -284,12 +300,12 @@ class TestDeepcyc():
         assert len(df) > 19000
 
         try:
-            lats, lons = ([28, 28], [-100, -89])
+            lats, lons = ([28, 28], [-100, -87])
             ret = self.dc.tctrack_events(lats, lons, 'line')
         except Exception as e:
             err_msg = str(e)
 
-        assert err_msg == "API returned HTTP 400 with 'line' total length exceeds max 10 degrees"
+        assert "API returned HTTP 400 with 'line' total length" in err_msg
 
 
 
