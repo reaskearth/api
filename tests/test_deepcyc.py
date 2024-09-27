@@ -307,6 +307,13 @@ class TestDeepcyc():
 
         assert "API returned HTTP 400 with 'line' total length" in err_msg
 
+        try:
+            lats, lons = ([24, 24.01, 24.01, 24, 24], [-100, -100, -80, -80, -100])
+            ret = self.dc.tctrack_events(lats, lons, 'polygon')
+        except Exception as e:
+            err_msg = str(e)
+
+        assert "API returned HTTP 400 with 'polygon' total perimiter" in err_msg
 
 
     @pytest.mark.parametrize("lat,lon", [
