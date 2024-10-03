@@ -243,25 +243,77 @@ class TestDeepcyc():
 
         assert round(calculated_rp) == round(api_rp)
 
+    def test_tctrack_across_prime_meridian(self):
+        """
+        Test a query across the prime meridian
+        """
 
-    @pytest.mark.parametrize("lat,lon", [
-        (34.076463, -84.652037),
-    ])
-    def test_tctrack_max_radius(self, lat, lon):
+        lats, lons = ([50, 50], [-1, 1])
+        ret = self.dc.tctrack_events(lats, lons, 'line')
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        # Expect hist to be small since it is not circling the globe
+        assert len(df) < 500
+
+        ret = self.dc.tctrack_events(50, -0.1, 'circle', radius_km=50)
+        df = gpd.GeoDataFrame.from_features(ret)
+        assert len(df) < 500
+
+
+    def test_tctrack_max_polygon_size(self):
         """
         Test maximum radius limitation for tctrack circle query
         """
-        ret = self.dc.tctrack_events(lat, lon, 'circle', radius_km=180)
+
+        ret = self.dc.tctrack_events(34, -84, 'circle', radius_km=180)
         assert 'DeepCyc Tracks' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
         assert len(df) > 23000
 
         try:
-            ret = self.dc.tctrack_events(lat, lon, 'circle', radius_km=200)
+            ret = self.dc.tctrack_events(34, -84, 'circle', radius_km=200)
         except Exception as e:
             err_msg = str(e)
 
-        assert err_msg == "API returned HTTP 400 with 'circle' radius exceeds max 180 km"
+        assert "API returned HTTP 400 with 'circle' radius" in err_msg
+
+        lats, lons = ([29, 30, 30, 29, 29], [-91, -91, -90, -90, -91])
+        ret = self.dc.tctrack_events(lats, lons, 'polygon')
+        assert 'DeepCyc Tracks' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) > 14000
+
+        try:
+            lats, lons = ([24, 30, 30, 24, 24], [-92, -92, -87, -87, -92])
+            ret = self.dc.tctrack_events(lats, lons, 'polygon')
+        except Exception as e:
+            err_msg = str(e)
+
+        assert "API returned HTTP 400 with 'polygon' total area" in err_msg
+
+        lats, lons = ([28, 28], [-100, -95])
+        ret = self.dc.tctrack_events(lats, lons, 'line')
+        assert 'DeepCyc Tracks' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) > 19000
+
+        try:
+            lats, lons = ([28, 28], [-100, -87])
+            ret = self.dc.tctrack_events(lats, lons, 'line')
+        except Exception as e:
+            err_msg = str(e)
+
+        assert "API returned HTTP 400 with 'line' total length" in err_msg
+
+        try:
+            lats, lons = ([24, 24.01, 24.01, 24, 24], [-100, -100, -80, -80, -100])
+            ret = self.dc.tctrack_events(lats, lons, 'polygon')
+        except Exception as e:
+            err_msg = str(e)
+
+        assert "API returned HTTP 400 with 'polygon' total perimiter" in err_msg
 
 
     @pytest.mark.parametrize("lat,lon", [
