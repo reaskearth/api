@@ -276,7 +276,7 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
             # Get mean of wind speed across locations and replace center cell wind speed
             if regrid_op == 'mean':
                 df_ws = pd.concat(dfs_ws).groupby('location_id').mean()
-            elif regird_op == 'median':
+            elif regrid_op == 'median':
                 df_ws = pd.concat(dfs_ws).groupby('location_id').median()
             else:
                 assert regrid_op == 'max'
