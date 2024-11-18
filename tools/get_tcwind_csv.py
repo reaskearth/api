@@ -43,12 +43,13 @@ def _do_queries_serially(all_lats, all_lons,
                          terrain_correction,
                          wind_speed_averaging_period,
                          product, scenario,
-                         time_horizon, return_period):
+                         time_horizon, return_period,
+                         metryc_version, deepcyc_version):
 
     if product.lower() == 'deepcyc':
-        m = DeepCyc()
+        m = DeepCyc(product_version=f'DeepCyc-{deepcyc_version}')
     else:
-        m = Metryc()
+        m = Metryc(product_version=f'Metryc-{metryc_version}')
 
     num_calls = ceil(len(all_lats) / 100)
     if return_period is None and product.lower() == 'deepcyc':
@@ -118,7 +119,8 @@ def _do_queries(all_lats, all_lons,
                  terrain_correction,
                  wind_speed_averaging_period,
                  product, scenario,
-                 time_horizon, return_period):
+                 time_horizon, return_period,
+                 metryc_version, deepcyc_version):
 
     import multiprocessing as mp
     from itertools import repeat
@@ -142,13 +144,15 @@ def _do_queries(all_lats, all_lons,
                                    repeat(product),
                                    repeat(scenario),
                                    repeat(time_horizon),
-                                   repeat(return_period)))
+                                   repeat(return_period),
+                                   repeat(metryc_version),
+                                   repeat(deepcyc_version)))
     else:
         dfs = []
         for lat, lon in zip(lats, lons):
             df = _do_queries_serially(lat, lon, terrain_correction,
                         wind_speed_averaging_period, product, scenario,
-                        time_horizon, return_period)
+                        time_horizon, return_period, metryc_version, deepcyc_version)
             dfs.append(df)
 
 
@@ -160,7 +164,8 @@ def _get_hazard(all_lats, all_lons, location_ids=None,
                 terrain_correction='full_terrain_gust',
                 wind_speed_averaging_period='3_seconds',
                 product='deepcyc', scenario='current_climate',
-                time_horizon='now', return_period=None):
+                time_horizon='now', return_period=None,
+                metryc_version='1.0.5', deepcyc_version='2.0.7'):
 
     assert len(all_lats) == len(all_lons), 'Mismatching number of lats and lons'
     if location_ids is not None:
@@ -176,7 +181,8 @@ def _get_hazard(all_lats, all_lons, location_ids=None,
     df = _do_queries(all_lats, all_lons, terrain_correction,
                      wind_speed_averaging_period,
                      product, scenario,
-                     time_horizon, return_period)
+                     time_horizon, return_period,
+                     metryc_version, deepcyc_version)
 
     df['lat'] = df.query_geometry.y
     df['lon'] = df.query_geometry.x
@@ -208,7 +214,8 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
                               wind_speed_averaging_period='3_seconds',
                               product='deepcyc', scenario='current_climate',
                               time_horizon='now', return_period=None, regrid_res=1,
-                              regrid_op='mean', halo_size=0):
+                              regrid_op='mean', halo_size=0,
+                              metryc_version='1.0.5', deepcyc_version='2.0.7'):
     """
     Get hazard with a particular resolution or with a halo.
 
@@ -232,7 +239,8 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
                          terrain_correction=terrain_correction,
                          wind_speed_averaging_period=wind_speed_averaging_period,
                          scenario=scenario, time_horizon=time_horizon,
-                         product=product, return_period=return_period)
+                         product=product, return_period=return_period,
+                         metryc_version=metryc_version, deepcyc_version=deepcyc_version)
 
     if regrid_res > 1 or halo_size > 0:
         # Offset lats, lons to lower left corner
@@ -254,7 +262,8 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
                                  terrain_correction=terrain_correction,
                                  wind_speed_averaging_period=wind_speed_averaging_period,
                                  scenario=scenario, time_horizon=time_horizon,
-                                 product=product, return_period=return_period)
+                                 product=product, return_period=return_period,
+                                 metryc_version=metryc_version, deepcyc_version=deepcyc_version)
                 dfs.append(df)
                 dfs_ws.append(df[['location_id', 'wind_speed_kph']])
 
@@ -312,6 +321,10 @@ def main():
                         help="Name of the output CSV file, otherwise output to stdout")
     parser.add_argument('--product', required=False, default='DeepCyc',
                         help="Name of the product to query. DeepCyc or Metryc.")
+    parser.add_argument('--deepcyc_version', required=False, default='2.0.7', 
+                        help="DeepCyc version to use.")
+    parser.add_argument('--metryc_version', required=False, default='1.0.5', 
+                        help="Metryc version to use.")
     parser.add_argument('--location_csv', required=False, default=None,
                         help="CSV file with l(L)atitude l(L)ongitude columns")
     parser.add_argument('--latitudes', required=False, nargs='+', type=float,
@@ -417,7 +430,9 @@ def main():
                 product=args.product, return_period=args.return_period,
                 regrid_res=args.regrid_resolution,
                 regrid_op=args.regrid_operation,
-                halo_size=args.halo_size)
+                halo_size=args.halo_size,
+                metryc_version=args.metryc_version,
+                deepcyc_version=args.deepcyc_version)
 
         if df is None:
             ret += 1
