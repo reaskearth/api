@@ -173,7 +173,7 @@ class TestMetryc():
         'live',
     ])
     @pytest.mark.parametrize("expected_agencies", [
-        ('USA', 'BOM', 'TOKYO')
+        ('USA', 'BOM', 'NADI', 'TOKYO')
     ])
     def test_list_with_agency(self, metryc_subproduct, expected_agencies):
 
