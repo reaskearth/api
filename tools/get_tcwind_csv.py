@@ -47,9 +47,15 @@ def _do_queries_serially(all_lats, all_lons,
                          metryc_version, deepcyc_version):
 
     if product.lower() == 'deepcyc':
-        m = DeepCyc(product_version=f'DeepCyc-{deepcyc_version}')
+        if deepcyc_version is None:
+            m = DeepCyc()
+        else:
+            m = DeepCyc(product_version=f'DeepCyc-{deepcyc_version}')
     else:
-        m = Metryc(product_version=f'Metryc-{metryc_version}')
+        if metryc_version is None:
+            m = Metryc()
+        else:
+            m = Metryc(product_version=f'Metryc-{metryc_version}')
 
     num_calls = ceil(len(all_lats) / 100)
     if return_period is None and product.lower() == 'deepcyc':
@@ -165,7 +171,7 @@ def _get_hazard(all_lats, all_lons, location_ids=None,
                 wind_speed_averaging_period='3_seconds',
                 product='deepcyc', scenario='current_climate',
                 time_horizon='now', return_period=None,
-                metryc_version='1.0.5', deepcyc_version='2.0.7'):
+                metryc_version=None, deepcyc_version=None):
 
     assert len(all_lats) == len(all_lons), 'Mismatching number of lats and lons'
     if location_ids is not None:
@@ -215,7 +221,7 @@ def get_hazard_with_resolution_or_halo(all_lats, all_lons, location_ids=None,
                               product='deepcyc', scenario='current_climate',
                               time_horizon='now', return_period=None, regrid_res=1,
                               regrid_op='mean', halo_size=0,
-                              metryc_version='1.0.5', deepcyc_version='2.0.7'):
+                              metryc_version=None, deepcyc_version=None):
     """
     Get hazard with a particular resolution or with a halo.
 
@@ -321,10 +327,10 @@ def main():
                         help="Name of the output CSV file, otherwise output to stdout")
     parser.add_argument('--product', required=False, default='DeepCyc',
                         help="Name of the product to query. DeepCyc or Metryc.")
-    parser.add_argument('--deepcyc_version', required=False, default='2.0.7', 
-                        help="DeepCyc version to use.")
-    parser.add_argument('--metryc_version', required=False, default='1.0.5', 
-                        help="Metryc version to use.")
+    parser.add_argument('--deepcyc_version', required=False, default=None, 
+                        help="DeepCyc version to use. Falls back to the API's default product version if not specified.")
+    parser.add_argument('--metryc_version', required=False, default=None,
+                        help="Metryc version to use.  Falls back to the API's default product version if not specified.")
     parser.add_argument('--location_csv', required=False, default=None,
                         help="CSV file with l(L)atitude l(L)ongitude columns")
     parser.add_argument('--latitudes', required=False, nargs='+', type=float,
