@@ -65,7 +65,7 @@ class TestDeepcyc():
         (14.0, 121),            # Philippines
         (22.25, 114.20),        # Hong Kong
         (-35.5, 174),           # New Zealand
-        (31.28418, -79.995117)   # Charleston Coast
+        (31.28418, -79.995117)  # Charleston Coast
     ])
     def test_tcwind_locations(self, lat, lon, terrain_correction):
 
@@ -148,7 +148,8 @@ class TestDeepcyc():
         (28.0, -82.5, 'Tampa'),
         (25.15, -80.735, 'Everglades'),
         (19.332, -155.757, 'Hawaii'),
-        (13.07, 80.27, 'Chennai')
+        (13.07, 80.27, 'Chennai'),
+        (35.6, 139.7, 'Tokyo')
     ])
     def test_tcwind_future_climate(self, scenario, time_horizon, min_lat, min_lon, location):
 
