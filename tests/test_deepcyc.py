@@ -581,3 +581,308 @@ class TestDeepcyc():
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert (df.status == 'OK').all()
+
+
+
+
+    @pytest.mark.parametrize("lat,lon", [
+        (27.7221, -82.7386),
+        (29.09915, -95.02722),
+    ])
+    def test_tctrack_central_pressure_circle(self, lat, lon):
+
+        radius_km = 10
+        ret_cp = self.dc.tctrack_central_pressure_events(lat, lon, 'circle', radius_km=radius_km)
+
+        df_cp = gpd.GeoDataFrame.from_features(ret_cp)
+        assert(list(df_cp.central_pressure)) == sorted(list(df_cp.central_pressure)), \
+             'Central pressure not sorted'
+
+        ret_vm = self.dc.tctrack_wind_speed_events(lat, lon, 'circle', radius_km=radius_km)
+        df_vm = gpd.GeoDataFrame.from_features(ret_vm)
+
+        assert (df_vm.wind_speed / df_cp.central_pressure).max() < 0.5, \
+             'Unexpected wind - pressure relationship'
+        assert (df_cp.central_pressure.loc[df_vm.wind_speed == 0] > 1000).all(),  \
+             'Central pressure too low for given wind speed'
+
+        assert set(df_vm.event_id) == set(df_cp.event_id), 'Inconsistent event ids'
+
+
+    @pytest.mark.parametrize("lat,lon", [
+        (27.7221, -82.7386), 
+        (29.09915, -95.02722), 
+        #(22.25, 114.20) # Hong Kong
+    ])
+    def test_tctrack_circle(self, lat, lon):
+
+        radius_km = 10
+        ret1 = self.dc.tctrack_events(lat, lon, 'circle', radius_km=radius_km)
+        geom1 = shapely.from_geojson(json.dumps(ret1['header']['query_geometry']))
+
+        aeqd_crs = f"+proj=aeqd +lat_0={lat} +lon_0={lon} +x_0=0 +y_0=0"
+        transformer = Transformer.from_crs("EPSG:4326", aeqd_crs, always_xy=True)
+
+        xx, yy = transformer.transform(*geom1.exterior.coords.xy)
+        circle = shapely.Polygon(list(zip(xx, yy)))
+        expected_area = np.pi*((radius_km*1000)**2)
+        assert (1 - (circle.area / expected_area)) < 0.002
+
+        radius_km = 5
+        ret2 = self.dc.tctrack_events(lat, lon, 'circle', radius_km=radius_km)
+        geom2 = shapely.from_geojson(json.dumps(ret2['header']['query_geometry']))
+
+        xx, yy = transformer.transform(*geom2.exterior.coords.xy)
+        circle = shapely.Polygon(list(zip(xx, yy)))
+        expected_area = np.pi*((radius_km*1000)**2)
+        assert (1 - (circle.area / expected_area)) < 0.002
+
+        df1 = gpd.GeoDataFrame.from_features(ret1)
+        df2 = gpd.GeoDataFrame.from_features(ret2)
+
+        assert len(set(df2.event_id)) == len(df2.event_id)
+        assert len(set(df1.event_id)) == len(df1.event_id)
+        assert len(df2) < len(df1)
+        assert set(df2.event_id).issubset(set(df1.event_id))
+
+
+    @pytest.mark.parametrize("lats,lons", [
+        ([28.5, 28.5], [-88.5, -88.25]), # Gulf
+        #([22.15, 22.15], [114.0, 114.25]) # Hong Kong
+    ])
+    def test_tctrack_line(self, lats, lons):
+        ret = self.dc.tctrack_events(lats, lons, 'line')
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df) > 1800
+
+    @pytest.mark.parametrize("lats,lons", [
+        ([29, 29.25, 29.25], [-90, -90, -90.25])
+    ])
+    def test_tctrack_multiline(self, lats, lons):
+        ret = self.dc.tctrack_events(lats, lons, 'line')
+        df = gpd.GeoDataFrame.from_features(ret)
+        assert len(df) > 3000
+
+    @pytest.mark.parametrize("lats,lons", [
+        ([29, 30, 30, 29, 29], [-91, -91, -90, -90, -91])
+    ])
+    def test_tctrack_polygon(self, lats, lons):
+        return_periods = [100, 200]
+        ret = self.dc.tctrack_returnvalues(lats, lons, return_periods, 'polygon')
+        assert 'DeepCyc Tracks' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert len(df.wind_speed) == len(return_periods)
+
+
+    @pytest.mark.parametrize("lats,lons,geometry,radius_km", [
+        (27.366, -82.558, 'circle', 50),
+        (-17.011, 178, 'circle', 50),
+        ([25, 26], [-80, -80], 'line', None),
+    ])
+    def test_tctrack_compare_versions(self, lats, lons, geometry, radius_km):
+
+        # tctrack events endpoint
+        ret = self.dc_v206.tctrack_events(lats, lons, geometry, radius_km=radius_km)
+        assert ret['header']['product'] == 'DeepCyc Tracks v2.0.6'
+        assert ret['header']['simulation_years'] == 41000
+        df_v206 = gpd.GeoDataFrame.from_features(ret)
+
+        ret = self.dc_v207.tctrack_events(lats, lons, geometry, radius_km=radius_km)
+        assert ret['header']['product'] == 'DeepCyc Tracks v2.0.7'
+        assert ret['header']['simulation_years'] == 41000
+        df_v207 = gpd.GeoDataFrame.from_features(ret)
+
+        assert (df_v206 == df_v207).all().all()
+        assert sorted(df_v207.year_id)[0].split('_')[0] == '1980'
+        assert sorted(df_v207.year_id)[-1].split('_')[0] == '2020'
+
+        ret = self.dc_v208.tctrack_events(lats, lons, geometry, radius_km=radius_km)
+        assert ret['header']['product'] == 'DeepCyc Tracks v2.0.8'
+        assert ret['header']['simulation_years'] == 66000
+        df_v208 = gpd.GeoDataFrame.from_features(ret)
+
+        assert set(df_v206.event_id).issubset(df_v208.event_id)
+        assert sorted(df_v208.year_id)[0].split('_')[0] == '1980'
+        assert sorted(df_v208.year_id)[-1].split('_')[0] == '2023'
+
+        # tctrack returnvalues endpoint
+        ret = self.dc_v207.tctrack_returnvalues(lats, lons, [100, 200, 250, 500, 1000, 2000], geometry,
+                                            radius_km=radius_km)
+        df_v207 = gpd.GeoDataFrame.from_features(ret)
+        ret = self.dc_v208.tctrack_returnvalues(lats, lons, [100, 200, 250, 500, 1000, 2000], geometry,
+                                            radius_km=radius_km)
+        df_v208 = gpd.GeoDataFrame.from_features(ret)
+
+        # Expect less than a 6% difference in return values between the versions
+        assert ((abs(df_v207.wind_speed - df_v208.wind_speed) / df_v208.wind_speed) < 0.06).all()
+
+
+    @pytest.mark.parametrize("lats,lons,geometry,radius_km", [
+        (26, -81, 'circle', 2),
+        (27.366, -82.558, 'circle', 20),
+        ([29.75, 30, 30, 29.75, 29.75], [-91, -91, -90.75, -90.75, -91], 'polygon', None),
+    ])
+    def test_tcwind_eventstats(self, lats, lons, geometry, radius_km):
+
+        ret = self.dc.tcwind_eventstats(lats, lons, geometry, radius_km=radius_km)
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        # All event ids are unique
+        assert len(set(df.event_id)) == len(df.event_id)
+
+        # geometry is in the middle of a cell
+        rkg_res = 2**-7 + 2**-9
+        top_lat = df.iloc[0].geometry.y
+        top_lon = df.iloc[0].geometry.x
+        assert (top_lat / rkg_res) % 1 == 0.5
+        assert (top_lon / rkg_res) % 1 == 0.5
+
+        # Check the wind speed
+        ret = self.dc.tcwind_events(top_lat, top_lon)
+        chk_df = gpd.GeoDataFrame.from_features(ret)
+
+        top_ws = df.iloc[0].max_wind_speed
+        top_event_id = df.iloc[0].event_id
+        assert chk_df[chk_df.event_id == top_event_id].wind_speed.item() == top_ws
+
+
+    @pytest.mark.parametrize("min_lat,max_lat,min_lon,max_lon,n_points,return_periods,label", [
+        (-20,-15,175,179, 10, [10,100,500,1000], 'Fiji'),
+        (-15,-12.5,-175,-170, 10, [10,100,500,1000], 'Samoa'),
+        (-16.975,-16.90,179.95,180, 10, [10,100,500,1000], 'Taveuni_Island')
+    ])
+    def test_tcwind_compare_versions(self, min_lat, max_lat, min_lon, max_lon, n_points, return_periods, label):
+        # Creates sample points
+        lats, lons = generate_random_points(min_lat, min_lon, max_lat, max_lon, n_points)
+
+        ret = self.dc_v206.tcwind_returnvalues(lats, lons, return_periods)
+        assert ret['header']['product'] == 'DeepCyc Maps v2.0.6'
+        assert ret['header']['simulation_years'] == 41000
+        df_v206 = gpd.GeoDataFrame.from_features(ret)
+
+        ret = self.dc_v207.tcwind_returnvalues(lats, lons, return_periods)
+        assert ret['header']['product'] == 'DeepCyc Maps v2.0.7'
+        assert ret['header']['simulation_years'] == 41000
+        df_v207 = gpd.GeoDataFrame.from_features(ret)
+
+        assert (df_v206 == df_v207).all().all()
+
+        ret = self.dc_v208.tcwind_returnvalues(lats, lons, return_periods)
+        assert ret['header']['product'] == 'DeepCyc Maps v2.0.8'
+        assert ret['header']['simulation_years'] == 66000
+        df_v208 = gpd.GeoDataFrame.from_features(ret)
+
+        if label == 'Taveuni_Island':
+            # The newest version has terrain fixes in this limited region
+            assert (abs(df_v207.wind_speed - df_v208.wind_speed) / df_v208.wind_speed).max() > 0.1
+        else:
+            # Expect less than a 5% difference in return values between the versions
+            assert ((abs(df_v207.wind_speed - df_v208.wind_speed) / df_v208.wind_speed) < 0.05).all()
+
+
+    @pytest.mark.parametrize("scenario,time_horizon", [
+        ('current_climate', 'now'),
+        ('SSP1-2.6', '2035'),
+        ('SSP1-2.6', '2050'),
+        ('SSP1-2.6', '2065'),
+        ('SSP2-4.5', '2035'),
+        ('SSP2-4.5', '2050'),
+        ('SSP2-4.5', '2065'),
+        ('SSP5-8.5', '2035'),
+        ('SSP5-8.5', '2050'),
+        ('SSP5-8.5', '2065'),
+
+        ('SSP1-2.6', '2080'),
+        ('SSP2-4.5', '2080'),
+        ('SSP5-8.5', '2080'),
+    ])
+    @pytest.mark.parametrize("lats,lons", [
+        ([28.5, 28.5], [-88.5, -88.25]), # Gulf
+        ([22.15, 22.15], [114.0, 114.25]) # Hong Kong
+    ])
+    def test_tctrack_future_climate(self, lats, lons, scenario, time_horizon):
+
+        return_periods = [50, 100, 250, 500, 1000]
+        ret = self.dc.tctrack_returnvalues(lats, lons, return_periods, 'line',
+                                           scenario=scenario, time_horizon=time_horizon)
+        assert 'DeepCyc Tracks' in ret['header']['product']
+        df = gpd.GeoDataFrame.from_features(ret)
+        assert len(df) == 5
+        assert ret['header']['scenario'] == scenario
+        assert ret['header']['time_horizon'] == time_horizon
+
+        # FIXME: add 2080 time_horizon
+        if time_horizon in ['2080']:
+            set(df.status) == {'NO CONTENT'}
+        else:
+            set(df.status) == {'OK'}
+            assert list(df.wind_speed) == sorted(list(df.wind_speed))
+
+            if scenario == 'current_climate':
+                assert ret['header']['simulation_years'] == 41000
+            else:
+                assert ret['header']['simulation_years'] == 25000
+
+
+    def test_tctrack_returnvalues_polygon_geojson(self):
+        """
+        Use a GeoJSON file to query deepcyc tctracks
+
+        The example file was manually created using: https://geojson.io
+        """
+
+        return_periods = [50, 100, 250, 500]
+
+        input_df = gpd.read_file(Path(__file__).parent / 'florida.geojson')
+
+        assert isinstance(input_df.iloc[0].geometry,
+                            shapely.geometry.polygon.Polygon), \
+                'Unexpected shape in GeoJSON'
+
+        lons, lats = input_df.iloc[0].geometry.boundary.coords.xy
+        lons = lons.tolist()
+        lats = lats.tolist()
+
+        ret = self.dc.tctrack_returnvalues(lats, lons, return_periods, 'polygon')
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert (df.status == 'OK').all()
+
+
+    def test_shp_file(self):
+        """
+        """
+
+        return_periods = [50, 100, 250, 500]
+
+        input_df = gpd.read_file(Path(__file__).parent / 'south_pacific.shp')
+
+        for idx, row in input_df.iterrows():
+
+            if idx == 0:
+                continue
+
+            if isinstance(row.geometry, shapely.geometry.multipolygon.MultiPolygon):
+                geoms = row.geometry.geoms
+            else:
+                assert isinstance(row.geometry, shapely.geometry.polygon.Polygon)
+                geoms = [row.geometry]
+
+            for geom in geoms:
+                if isinstance(geom.boundary, shapely.geometry.multilinestring.MultiLineString):
+                    # FIXME: not sure why the Polygon class sometimes produces these
+                    continue
+
+                lons, lats = geom.boundary.coords.xy
+                lons = [np.round(lon, 2) for lon in lons.tolist()]
+                lats = [np.round(lat, 2) for lat in lats.tolist()]
+
+                err_msg = None
+                try:
+                    ret = self.dc.tctrack_returnvalues(lats, lons, return_periods, 'polygon')
+                except Exception as e:
+                    err_msg = str(e)
+
+                assert err_msg is None
