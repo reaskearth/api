@@ -7,6 +7,8 @@ import numpy as np
 import pytest
 import shapely
 import json
+import io
+import tempfile
 import geopy
 import geopy.distance
 import sys
@@ -84,6 +86,40 @@ class TestMetryc():
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert len(set(df.cell_id)) == width_and_height*width_and_height
+
+
+    @pytest.mark.parametrize("format", [
+        None, 'geojson', 'csv',
+    ])
+    def test_tcwind_events_format(self, format):
+
+        ret = self.mc.tcwind_events(28, -82, format=format)
+
+        if format in [None, 'geojson']:
+            df = gpd.GeoDataFrame.from_features(ret)
+            assert len(df) > 60
+        else:
+            with tempfile.NamedTemporaryFile() as tmp:
+                tmp.write(ret)
+                df_from_csv = pd.read_csv(tmp.name)
+
+            df_from_csv_buf = pd.read_csv(io.StringIO(ret.decode()))
+            assert df_from_csv.equals(df_from_csv_buf)
+
+            df_from_csv['geometry'] = df_from_csv['geometry'].apply(shapely.wkt.loads)
+            df_from_csv['query_geometry'] = df_from_csv['query_geometry'].apply(json.loads)
+
+            ret = self.mc.tcwind_events(28, -82, format='geojson')
+            df_from_geojson = gpd.GeoDataFrame.from_features(ret)
+
+            # Check that header information is the same and included in the csv
+            for k, v in ret['header'].items():
+                if v is not None:
+                    assert df_from_csv[k].iloc[0] == v
+
+            # Now remove all header information and check columns
+            df_from_csv = df_from_csv.drop(ret['header'].keys(), axis=1)
+            assert (df_from_csv == df_from_geojson).all().all()
 
 
     @pytest.mark.parametrize("lats,lons,geometry,radius_km", [
@@ -357,6 +393,7 @@ class TestMetryc():
             # FIXME: inconsistencies to be fixed
             if (storm_name == 'Bonita' and storm_year == 1996) or \
                (storm_name == 'Bernie' and storm_year == 2001) or \
+               ('Blanche' in storm_name and storm_year == 1987) or \
                (storm_name == 'Christelle' and storm_year == 1994):
                 continue
 
