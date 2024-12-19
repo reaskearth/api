@@ -1,5 +1,10 @@
 import sys
 import pytest
+import io
+import json
+import pandas as pd
+import tempfile
+import shapely
 from pathlib import Path
 import geopandas as gpd
 
@@ -114,3 +119,37 @@ class TestCommon:
         assert ret['header']['wind_speed_units'] == wind_speed_units
 
         assert ws_kph == round(ws_other*multiplier)
+
+    @pytest.mark.parametrize("prod", [mc, dc])
+    @pytest.mark.parametrize("format", [
+        None, 'geojson', 'csv',
+    ])
+    def test_tcwind_events_format(self, prod, format):
+
+        ret = prod.tcwind_events(28, -82, format=format)
+
+        if format in [None, 'geojson']:
+            df = gpd.GeoDataFrame.from_features(ret)
+            assert len(df) > 60
+        else:
+            with tempfile.NamedTemporaryFile() as tmp:
+                tmp.write(ret)
+                df_from_csv = pd.read_csv(tmp.name)
+
+            df_from_csv_buf = pd.read_csv(io.StringIO(ret.decode()))
+            assert df_from_csv.equals(df_from_csv_buf)
+
+            df_from_csv['geometry'] = df_from_csv['geometry'].apply(shapely.wkt.loads)
+            df_from_csv['query_geometry'] = df_from_csv['query_geometry'].apply(json.loads)
+
+            ret = prod.tcwind_events(28, -82, format='geojson')
+            df_from_geojson = gpd.GeoDataFrame.from_features(ret)
+
+            # Check that header information is the same and included in the csv
+            for k, v in ret['header'].items():
+                if v is not None:
+                    assert df_from_csv[k].iloc[0] == v
+
+            # Now remove all header information and check columns
+            df_from_csv = df_from_csv.drop(ret['header'].keys(), axis=1)
+            assert (df_from_csv == df_from_geojson).all().all()
