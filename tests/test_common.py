@@ -126,7 +126,10 @@ class TestCommon:
     ])
     def test_tcwind_events_format(self, prod, format):
 
-        ret = prod.tcwind_events(28, -82, format=format)
+        latitude = 28
+        longitude = -82
+
+        ret = prod.tcwind_events(latitude, longitude, format=format)
 
         if format in [None, 'geojson']:
             df = gpd.GeoDataFrame.from_features(ret)
@@ -156,5 +159,8 @@ class TestCommon:
             df_from_geojson['longitude'] = df_from_geojson.apply(lambda r: r.query_geometry['coordinates'][0], axis=1)
             df_from_geojson['latitude'] = df_from_geojson.apply(lambda r: r.query_geometry['coordinates'][1], axis=1)
             df_from_geojson.drop(['geometry', 'query_geometry'], inplace=True, axis=1)
+
+            assert (df_from_csv['latitude'] == latitude).all()
+            assert (df_from_csv['longitude'] == longitude).all()
 
             assert (df_from_csv == df_from_geojson).all().all()
