@@ -139,9 +139,6 @@ class TestCommon:
             df_from_csv_buf = pd.read_csv(io.StringIO(ret.decode()))
             assert df_from_csv.equals(df_from_csv_buf)
 
-            df_from_csv['geometry'] = df_from_csv['geometry'].apply(shapely.wkt.loads)
-            df_from_csv['query_geometry'] = df_from_csv['query_geometry'].apply(json.loads)
-
             ret = prod.tcwind_events(28, -82, format='geojson')
             df_from_geojson = gpd.GeoDataFrame.from_features(ret)
 
@@ -151,5 +148,13 @@ class TestCommon:
                     assert df_from_csv[k].iloc[0] == v
 
             # Now remove all header information and check columns
-            df_from_csv = df_from_csv.drop(ret['header'].keys(), axis=1)
+            df_from_csv.drop(ret['header'].keys(), inplace=True, axis=1)
+
+            # Switch GeoJSON df to use same coordinates as CSV df. These are
+            # different to make the CSV easier to load into applications like
+            # Excel
+            df_from_geojson['longitude'] = df_from_geojson.apply(lambda r: r.query_geometry['coordinates'][0], axis=1)
+            df_from_geojson['latitude'] = df_from_geojson.apply(lambda r: r.query_geometry['coordinates'][1], axis=1)
+            df_from_geojson.drop(['geometry', 'query_geometry'], inplace=True, axis=1)
+
             assert (df_from_csv == df_from_geojson).all().all()
