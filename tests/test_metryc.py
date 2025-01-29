@@ -167,6 +167,11 @@ class TestMetryc():
 
         assert len(df.event_id) == len(set(df.event_id))
         assert len(df) > 800
+        # check there is no duplication
+        df['agency'] = df['event_id'].apply(lambda x: x.split('_')[-2])
+        df['basin'] = df['event_id'].apply(lambda x: x.split('_')[-1])
+        dup_df = df[df.duplicated(subset=['storm_name','storm_year','agency','basin'], keep=False)].loc[df['storm_name'] != 'Unnamed']
+        assert len(dup_df) == 0
 
     @pytest.mark.parametrize("metryc_subproduct", [
         'historical',
