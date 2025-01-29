@@ -170,8 +170,9 @@ class TestMetryc():
         # check there is no duplication
         df['agency'] = df['event_id'].apply(lambda x: x.split('_')[-2])
         df['basin'] = df['event_id'].apply(lambda x: x.split('_')[-1])
-        dup_df = df[df.duplicated(subset=['storm_name','storm_year','agency','basin'], keep=False)].loc[df['storm_name'] != 'Unnamed']
-        assert len(dup_df) == 0
+        dup_df = df[df.duplicated(subset=['storm_name','storm_year','agency','basin'], keep='last')].loc[df['storm_name'] != 'Unnamed']
+        # Ernie 1996 is an exception
+        assert len(dup_df) == 1 and dup_df.iloc[0]['storm_name'] == 'Ernie' and dup_df.iloc[0]['storm_year'] == 1996
 
     @pytest.mark.parametrize("metryc_subproduct", [
         'historical',
