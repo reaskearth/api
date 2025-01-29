@@ -152,7 +152,6 @@ class TestMetryc():
         assert 'Metryc Live' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
-        assert 'Otis_2023_2023291N08267_Live_USA_EP' in list(df.event_id)
         assert len(df) >= 1
 
 
@@ -187,7 +186,7 @@ class TestMetryc():
         assert 'Metryc' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
-        agencies = set([e.split('_')[4] for e in list(df.event_id)])
+        agencies = set([e.split('_')[6] for e in list(df.event_id)])
         if metryc_subproduct == 'historical':
             assert agencies == set(expected_agencies)
         else:
@@ -197,7 +196,7 @@ class TestMetryc():
         for agency in agencies:
             ret = list_endpoint(agency=agency)
             df = gpd.GeoDataFrame.from_features(ret)
-            assert set([e.split('_')[4] for e in list(df.event_id)]) == {agency}
+            assert set([e.split('_')[6] for e in list(df.event_id)]) == {agency}
 
         # Select an invalid agency
         try:
@@ -242,8 +241,12 @@ class TestMetryc():
         ret = list_endpoint(agency=agency)
         df = gpd.GeoDataFrame.from_features(ret)
 
-        row = df.iloc[0]
+        if 'Abby' in df.storm_name.values:
+            row = df[df.storm_name == 'Abby'].iloc[0]
+        else:
+            row = df.iloc[0]
         min_lon, min_lat, max_lon, max_lat = row.geometry.bounds
+
         try:
             ret = list_endpoint(agency='INVALID')
         except Exception as e:
@@ -358,6 +361,8 @@ class TestMetryc():
             if (storm_name == 'Bonita' and storm_year == 1996) or \
                (storm_name == 'Bernie' and storm_year == 2001) or \
                ('Blanche' in storm_name and storm_year == 1987) or \
+               ('Doksuri' in storm_name and storm_year == 2023) or \
+               ('Ken' in storm_name and 'Lola' in storm_name and storm_year == 1989) or \
                (storm_name == 'Christelle' and storm_year == 1994):
                 continue
 

@@ -163,4 +163,4 @@ class TestCommon:
             assert (df_from_csv['latitude'] == latitude).all()
             assert (df_from_csv['longitude'] == longitude).all()
 
-            assert (df_from_csv == df_from_geojson).all().all()
+            assert (df_from_csv.sort_values(by='event_id').values == df_from_geojson.sort_values(by='event_id').values).all()
