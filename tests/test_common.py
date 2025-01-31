@@ -120,6 +120,8 @@ class TestCommon:
 
         assert ws_kph == round(ws_other*multiplier)
 
+    @pytest.mark.skipif(sys.platform == 'win32', reason='Temp file is not writable on Windows')
+    @pytest.mark.skipif(sys.platform == 'darwin', reason='Temp file is not writable on Mac')
     @pytest.mark.parametrize("prod", [mc, dc])
     @pytest.mark.parametrize("format", [
         None, 'geojson', 'csv',
