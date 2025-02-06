@@ -53,6 +53,19 @@ class TestDeepcyc():
         assert len(set(df.cell_id)) == 1
 
 
+    @pytest.mark.parametrize("lat,lon", [
+        (-35.5, 174),           # New Zealand
+    ])
+    def test_tcwind_event_names(self, lat, lon):
+
+        ret = self.dc.tcwind_events(lat, lon)
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert df.iloc[0].event_id == 'c126897960d855919aa4'
+        assert '2003_0794' in df.iloc[0].year_id
+        assert df.iloc[0].cell_id == 205718937
+
+
     @pytest.mark.parametrize("terrain_correction", [
         'full_terrain_gust',
         'open_water',
