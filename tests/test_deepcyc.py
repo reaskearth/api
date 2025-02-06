@@ -64,6 +64,7 @@ class TestDeepcyc():
         assert df.iloc[0].event_id == 'c126897960d855919aa4'
         assert '2003_0794' in df.iloc[0].year_id
         assert df.iloc[0].cell_id == 205718937
+        assert df.iloc[-1].event_id == '96c457eb274339635020'
 
 
     @pytest.mark.parametrize("terrain_correction", [
