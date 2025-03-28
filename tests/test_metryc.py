@@ -28,8 +28,8 @@ class TestMetryc():
 
 
     @pytest.mark.parametrize("lats,lons,storm_name", [
-        ([26.95747, 25.0], [-82.06295, -82.1], 'Katrina'),
         ([-16.5856], [178.898], 'Yasa'),
+        ([26.95747, 25.0], [-82.06295, -82.1], 'Katrina'),
         ([-20.2264804], [169.7780007], 'Yali')
     ])
     def test_tcwind_simple(self, lats, lons, storm_name):
