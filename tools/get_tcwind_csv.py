@@ -184,7 +184,8 @@ def _get_hazard(all_lats, all_lons, location_ids=None,
     # Do a merge to attach the query locations and location names
     if location_ids is not None:
         df_locs = pd.DataFrame({'lat': all_lats, 'lon': all_lons})
-        df_locs[location_ids.name] = list(location_ids)
+        if hasattr(location_ids, 'name'):
+            df_locs[location_ids.name] = list(location_ids)
         df = pd.merge(df, df_locs, how='left', on=['lat', 'lon'])
 
     if product == 'DeepCyc' and return_period is not None:
@@ -198,7 +199,8 @@ def _get_hazard(all_lats, all_lons, location_ids=None,
         df = convert_open_water_1minute_to_10minute(df)
 
     if location_ids is not None:
-        assert set(df[location_ids.name]) == set(location_ids)
+        if hasattr(location_ids, 'name'):
+            assert set(df[location_ids.name]) == set(location_ids)
 
     return df
 
@@ -371,6 +373,7 @@ def main():
 
         lats = args.latitudes
         lons = args.longitudes
+        location_ids = list(range(len(lats)))
     else:
         input_df = pd.read_csv(args.location_csv)
         lat_col_name = None
