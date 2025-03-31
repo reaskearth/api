@@ -114,3 +114,20 @@ class TestCommon:
         assert ret['header']['wind_speed_units'] == wind_speed_units
 
         assert ws_kph == round(ws_other*multiplier)
+
+    @pytest.mark.parametrize("prod", [mc, dc])
+    @pytest.mark.parametrize("lats,lons", [
+        ([28], [-81]),
+    ])
+    @pytest.mark.parametrize("wind_speed_averaging_period", [
+        '3_seconds', '1_minute', '10_minute', 'INVALID'
+    ])
+    def test_tcwind_windspeed_averaging_period(self, prod, lats, lons, wind_speed_averaging_period):
+
+        try:
+            ret = self.dc.tcwind_events(lats, lons, terrain_correction='open_water',
+                                          wind_speed_averaging_period=wind_speed_averaging_period)
+            assert ret['header']['terrain_correction'] == 'open_water'
+            assert ret['header']['wind_speed_averaging_period'] == wind_speed_averaging_period
+        except Exception as e:
+            assert wind_speed_averaging_period in ['10_minute', 'INVALID']
