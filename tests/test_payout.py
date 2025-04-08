@@ -11,6 +11,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from reaskapi.deepcyc import DeepCyc
+from reaskapi.metryc import Metryc
 
 default_params = { "scenario": "current_climate",
             "time_horizon": "now",
@@ -21,6 +22,36 @@ default_params = { "scenario": "current_climate",
 
 class TestPayout():
     dc = DeepCyc()
+    mc = Metryc()
+
+    def check_expected_payouts(self, df_event, df_annual, payout_tables, event_limit):
+
+        if 'storm_year' in df_event.columns:
+            year_id_field = 'storm_year'
+        else:
+            year_id_field = 'year_id'
+
+        # Check individual event payouts
+        total_payout_for_year = {}
+        for _, row in df_event.iterrows():
+            payout_ratio_idx = len(payout_tables[0]['payout_ratio']) - 1
+            for ws in np.flip(payout_tables[0]['wind_speed']):
+                if row.wind_speed >= ws:
+                    break
+                else:
+                    payout_ratio_idx -= 1
+
+            if row[year_id_field] in total_payout_for_year:
+                total_payout_for_year[row[year_id_field]] += row.payout
+            else:
+                total_payout_for_year[row[year_id_field]] = row.payout
+
+            assert row.payout == payout_tables[0]['payout_ratio'][payout_ratio_idx] * event_limit
+
+        # Check annual payouts
+        for _, row in df_annual.iterrows():
+            assert total_payout_for_year[row.year] == row.payout
+
 
     def make_payout_request(self, lats, lons, location_event_limits,
                              portfolio_event_limit, portfolio_annual_limit):
@@ -88,26 +119,36 @@ class TestPayout():
         assert min_wind_speed == min(payout_tables[0]['wind_speed'])
         assert len(df_event[df_event.wind_speed < min_wind_speed]) == 0
 
-        # Check individual event payouts
-        total_payout_for_year = {}
-        for _, row in df_event.iterrows():
-            payout_ratio_idx = len(payout_tables[0]['payout_ratio']) - 1
-            for ws in np.flip(payout_tables[0]['wind_speed']):
-                if row.wind_speed >= ws:
-                    break
-                else:
-                    payout_ratio_idx -= 1
+        import pdb
+        pdb.set_trace()
 
-            if row.year_id in total_payout_for_year:
-                total_payout_for_year[row.year_id] += row.payout
-            else:
-                total_payout_for_year[row.year_id] = row.payout
+        self.check_expected_payouts(df_event, df_annual, payout_tables, event_limit)
 
-            assert row.payout == payout_tables[0]['payout_ratio'][payout_ratio_idx] * event_limit
+    @pytest.mark.parametrize("lat,lon", [
+        (30.0, -90.0),
+    ])
+    def test_metryc_payout(self, lat, lon):
 
-        # Check annual payouts
-        for _, row in df_annual.iterrows():
-            assert total_payout_for_year[row.year] == row.payout
+        location_event_limit = 50000
+        portfolio_event_limit = 100000
+        portfolio_annual_limit = 100000
+        portfolio, payout_tables = self.make_payout_request([lat], [lon],
+                                         [location_event_limit],
+                                           portfolio_event_limit,
+                                             portfolio_annual_limit)
+
+        params = default_params.copy()
+        params['year_since'] = 2000
+        res = self.mc.tcwind_payout(portfolio, payout_tables, **params)
+
+        df_event = pd.DataFrame(res['event_payouts'])
+        df_annual = pd.DataFrame(res['annual_payouts'])
+
+        import pdb
+        pdb.set_trace()
+
+        event_limit = min(portfolio_event_limit, location_event_limit)
+        self.check_expected_payouts(df_event, df_annual, payout_tables, event_limit)
 
 
     @pytest.mark.parametrize("lat,lon,location_event_limit", [

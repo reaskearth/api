@@ -35,6 +35,15 @@ class Metryc(ApiClient):
 
         return self.__tcwind_footprint('historical', min_lat, max_lat, min_lon, max_lon, **kwargs)
 
+    def tcwind_payout(self, portfolio, payout_table, **kwargs):
+
+        params = kwargs.copy()
+
+        post_data = { 'portfolio': portfolio, 'payout_table': payout_table }
+        self.logger.debug(f'Parameters: {params}')
+
+        return self._call_api(params, 'metryc/historical/tcwind/payout', 'POST', post_data)
+
     def live_tcwind_list(self, **kwargs):
 
         self.logger.debug(f'Parameters: {kwargs}')

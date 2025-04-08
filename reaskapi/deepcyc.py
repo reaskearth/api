@@ -54,7 +54,6 @@ class DeepCyc(ApiClient):
 
         return self._call_api(params, 'deepcyc/tcwind/payout', 'POST', post_data)
 
-
     def tcwind_eventstats(self, lat, lon, geometry, **kwargs):
 
         params = kwargs.copy()
