@@ -84,6 +84,22 @@ class TestDeepcyc():
 
         assert len(set(df.cell_id)) == 1
 
+    def test_tcwind_eventid_consistency(self):
+        onshore = (17.4, -66.0)
+        offshore = (17.6, -66.0)
+
+        ret = self.dc.tcwind_events(*onshore)
+        df_on = gpd.GeoDataFrame.from_features(ret)
+        assert (df_on.status == 'OK').all()
+
+        ret = self.dc.tcwind_events(*offshore)
+        df_off = gpd.GeoDataFrame.from_features(ret)
+        assert (df_off.status == 'OK').all()
+
+        # Test that eventids are shared across tiles
+        pct_same = len(set(df_on.event_id).intersection(set(df_off.event_id))) / len(df_on)
+
+        assert pct_same > 0.90
 
     @pytest.mark.parametrize("lat,lon", [
         (-17.68298, 177.2756),  # Fiji

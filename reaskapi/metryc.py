@@ -3,13 +3,15 @@ from reaskapi.api_client import ApiClient, ClientConfig
 
 class Metryc(ApiClient):
 
-    def __init__(self, config_section='default'):
+    def __init__(self, config_section='default', product_version=None):
         """(deprecated) Initialize Metryc class"""
-        super().__init__('Metryc', config_section=config_section)
+        super().__init__('Metryc', config_section=config_section,
+                            product_version=product_version)
 
-    def __init__(self, config: ClientConfig = None):
+    def __init__(self, config: ClientConfig = None, product_version=None):
         """Initialize Metryc class by ClientConfig object"""
-        super().__init__('Metryc', config=config)
+        super().__init__('Metryc', config=config,
+                            product_version=product_version)
 
 
     def __tcwind_footprint(self, subproduct, min_lat, max_lat, min_lon, max_lon, **kwargs):
