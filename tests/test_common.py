@@ -120,6 +120,7 @@ class TestCommon:
 
         assert ws_kph == round(ws_other*multiplier)
 
+
     @pytest.mark.skipif(sys.platform == 'win32', reason='Temp file is not writable on Windows')
     @pytest.mark.skipif(sys.platform == 'darwin', reason='Temp file is not writable on Mac')
     @pytest.mark.parametrize("prod", [mc, dc])
@@ -166,3 +167,21 @@ class TestCommon:
             assert (df_from_csv['longitude'] == longitude).all()
 
             assert (df_from_csv.sort_values(by='event_id').values == df_from_geojson.sort_values(by='event_id').values).all()
+
+
+    @pytest.mark.parametrize("prod", [mc, dc])
+    @pytest.mark.parametrize("lats,lons", [
+        ([28], [-81]),
+    ])
+    @pytest.mark.parametrize("wind_speed_averaging_period", [
+        '3_seconds', '1_minute', '10_minute', 'INVALID'
+    ])
+    def test_tcwind_windspeed_averaging_period(self, prod, lats, lons, wind_speed_averaging_period):
+
+        try:
+            ret = self.dc.tcwind_events(lats, lons, terrain_correction='open_water',
+                                          wind_speed_averaging_period=wind_speed_averaging_period)
+            assert ret['header']['terrain_correction'] == 'open_water'
+            assert ret['header']['wind_speed_averaging_period'] == wind_speed_averaging_period
+        except Exception as e:
+            assert wind_speed_averaging_period in ['10_minute', 'INVALID']
