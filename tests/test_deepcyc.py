@@ -147,7 +147,7 @@ class TestDeepcyc():
 
 
     @pytest.mark.parametrize("lats,lons,status", [
-        (38.88671875, -104.86328125, {'NO CONTENT'}),
+        ([38.88671875], [-104.86328125], {'NO CONTENT'}),
         ([-17.6525, 30.6], [177.2634, -90.0], {'OK'}),
         ([0.0], [0.0], {'NO CONTENT'}),
         ([30.6], [-90.0], {'OK'}),

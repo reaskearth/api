@@ -38,27 +38,34 @@ class TestPayout():
         ]
 
         geoms = []
+        payout_geo_props = []
         location_props = []
-        for lat, lon, loc_event_limit in zip(lats, lons, location_event_limits):
+        for idx, (lat, lon, loc_event_limit) in enumerate(zip(lats, lons, location_event_limits)):
 
             location_props.append({
-                "id": '0',
+                "id": idx,
                 "location_event_limit": loc_event_limit,
+                "payout_geometry_id": [idx]
+            })
+            payout_geo_props.append({
+                "id": idx,
                 "payout_table_id": payout_table_id
             })
             geoms.append(Point(lon, lat))
 
         # Convert to GeoJSON format
-        df = gpd.GeoDataFrame(location_props, geometry=[Point(lon, lat)])
-        portfolio = json.loads(df.to_json())
+        port_df = gpd.GeoDataFrame(location_props, geometry=[Point(lon, lat)])
+        portfolio = json.loads(port_df.to_json())
         portfolio["properties"] = {
             "name": "My Portfolio",
             "id": '0',
             "portfolio_event_limit": portfolio_event_limit,
             "portfolio_annual_limit": portfolio_annual_limit
         }
+        payout_geo_df = gpd.GeoDataFrame(payout_geo_props, geometry=[Point(lon, lat)])
+        payout_geometry = json.loads(payout_geo_df.to_json())
 
-        return portfolio, payout_tables
+        return portfolio, payout_geometry, payout_tables
 
     @pytest.mark.parametrize("lat,lon", [
         (31.0, -85.0),
@@ -68,12 +75,12 @@ class TestPayout():
         location_event_limit = 50000
         portfolio_event_limit = 100000
         portfolio_annual_limit = 100000
-        portfolio, payout_tables = self.make_payout_request([lat], [lon],
+        portfolio, payout_geometry, payout_tables = self.make_payout_request([lat], [lon],
                                          [location_event_limit],
                                            portfolio_event_limit,
                                              portfolio_annual_limit)
 
-        res = self.dc.tcwind_payout(portfolio, payout_tables, **default_params)
+        res = self.dc.tcwind_payout(portfolio, payout_geometry, payout_tables, **default_params)
 
         df_event = pd.DataFrame(res['event_payouts'])
         df_annual = pd.DataFrame(res['annual_payouts'])
@@ -107,7 +114,7 @@ class TestPayout():
 
         # Check annual payouts
         for _, row in df_annual.iterrows():
-            assert total_payout_for_year[row.year] == row.payout
+            assert total_payout_for_year[row.year_id] == row.payout
 
 
     @pytest.mark.parametrize("lat,lon,location_event_limit", [
@@ -115,24 +122,24 @@ class TestPayout():
     ])
     def test_location_event_limit(self, lat, lon, location_event_limit):
         
-        portfolio, payout_table = self.make_payout_request([lat], [lon], [location_event_limit],
+        portfolio, payout_geometry, payout_table = self.make_payout_request([lat], [lon], [location_event_limit],
                                                            100000, 100000)
-        res = self.dc.tcwind_payout(portfolio, payout_table, **default_params)
+        res = self.dc.tcwind_payout(portfolio, payout_geometry, payout_table, **default_params)
 
     @pytest.mark.parametrize("lat,lon,portfolio_event_limit", [
         (31.0, -85.0, 15000),
     ])
     def test_portfolio_event_limit(self, lat, lon, portfolio_event_limit):
 
-        portfolio, payout_table = self.make_payout_request([lat], [lon], [100000],
+        portfolio, payout_geometry, payout_table = self.make_payout_request([lat], [lon], [100000],
                                                            portfolio_event_limit, 100000)
-        res = self.dc.tcwind_payout(portfolio, payout_table, **default_params)
+        res = self.dc.tcwind_payout(portfolio, payout_geometry, payout_table, **default_params)
 
     @pytest.mark.parametrize("lat,lon,portfolio_annual_limit", [
         (31.0, -85.0, 15000),
     ])
     def test_portfolio_annual_limit(self, lat, lon, portfolio_annual_limit):
 
-        portfolio, payout_table = self.make_payout_request([lat], [lon], [100000],
+        portfolio, payout_geometry, payout_table = self.make_payout_request([lat], [lon], [100000],
                                                            100000, 100000)
-        res = self.dc.tcwind_payout(portfolio, payout_table, **default_params)
+        res = self.dc.tcwind_payout(portfolio, payout_geometry, payout_table, **default_params)
