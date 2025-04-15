@@ -37,10 +37,11 @@ class TestDeepcyc():
     dc_v207 = DeepCyc(product_version='DeepCyc-2.0.7')
     dc_v208 = DeepCyc(product_version='DeepCyc-2.0.8')
 
-    @pytest.mark.parametrize("lat,lon", [
+    @pytest.mark.parametrize("lat,lon,status", [
         (19.71538, -155.544),  # Hawaii
         (-17.68298, 177.2756), # Fiji
         (31.6938, -85.1774),   # CONUS
+        (17.364, -62.85),      # Saint Kitts
         (-20.35685, 148.9511), # Australia
         (22.25, 114.20)        # Hong Kong
     ])
@@ -51,6 +52,20 @@ class TestDeepcyc():
 
         assert (df.status == 'OK').all()
         assert len(set(df.cell_id)) == 1
+
+
+    @pytest.mark.parametrize("lat,lon", [
+        (-35.5, 174),           # New Zealand
+    ])
+    def test_tcwind_event_names(self, lat, lon):
+
+        ret = self.dc.tcwind_events(lat, lon)
+        df = gpd.GeoDataFrame.from_features(ret)
+
+        assert df.iloc[0].event_id == 'c126897960d855919aa4'
+        assert '2003_0794' in df.iloc[0].year_id
+        assert df.iloc[0].cell_id == 205718937
+        assert df.iloc[-1].event_id == '96c457eb274339635020'
 
 
     @pytest.mark.parametrize("terrain_correction", [
@@ -132,6 +147,7 @@ class TestDeepcyc():
 
 
     @pytest.mark.parametrize("lats,lons,status", [
+        (38.88671875, -104.86328125, {'NO CONTENT'}),
         ([-17.6525, 30.6], [177.2634, -90.0], {'OK'}),
         ([0.0], [0.0], {'NO CONTENT'}),
         ([30.6], [-90.0], {'OK'}),

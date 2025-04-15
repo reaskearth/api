@@ -31,8 +31,8 @@ class TestMetryc():
 
 
     @pytest.mark.parametrize("lats,lons,storm_name", [
-        ([26.95747, 25.0], [-82.06295, -82.1], 'Katrina'),
         ([-16.5856], [178.898], 'Yasa'),
+        ([26.95747, 25.0], [-82.06295, -82.1], 'Katrina'),
         ([-20.2264804], [169.7780007], 'Yali')
     ])
     def test_tcwind_simple(self, lats, lons, storm_name):
@@ -188,7 +188,6 @@ class TestMetryc():
         df = gpd.GeoDataFrame.from_features(ret)
 
         assert 'Rae_2025_SH192025_66f63d6eaf51592f_Metryc_20250225T12_NADI_SP' in list(df.event_id)
-        assert len(df) >= 1
 
 
     def test_historical_list(self):
@@ -202,6 +201,12 @@ class TestMetryc():
 
         assert len(df.event_id) == len(set(df.event_id))
         assert len(df) > 800
+        # check there is no duplication
+        df['agency'] = df['event_id'].apply(lambda x: x.split('_')[-2])
+        df['basin'] = df['event_id'].apply(lambda x: x.split('_')[-1])
+        dup_df = df[df.duplicated(subset=['storm_name','storm_year','agency','basin'], keep='last')].loc[df['storm_name'] != 'Unnamed']
+        # Ernie 1996 is an exception
+        assert len(dup_df) == 1 and dup_df.iloc[0]['storm_name'] == 'Ernie' and dup_df.iloc[0]['storm_year'] == 1996
 
     @pytest.mark.parametrize("metryc_subproduct", [
         'historical',
@@ -279,6 +284,7 @@ class TestMetryc():
 
         row = df.iloc[1]
         min_lon, min_lat, max_lon, max_lat = row.geometry.bounds
+
         try:
             ret = list_endpoint(agency='INVALID')
         except Exception as e:
@@ -394,7 +400,8 @@ class TestMetryc():
             if (storm_name == 'Bonita' and storm_year == 1996) or \
                (storm_name == 'Bernie' and storm_year == 2001) or \
                (storm_name == 'Christelle' and storm_year == 1994) or \
-               ('Blanch' in storm_name and storm_year == 1987) or \
+               ('Doksuri' in storm_name and storm_year == 2023) or \
+               ('Blanche' in storm_name and storm_year == 1987) or \
                ('Doksuri' in storm_name and storm_year == 2023) or \
                ('Ken' in storm_name and 'Lola' in storm_name and storm_year == 1989):
                 continue
