@@ -37,7 +37,7 @@ class TestDeepcyc():
     dc_v207 = DeepCyc(product_version='DeepCyc-2.0.7')
     dc_v208 = DeepCyc(product_version='DeepCyc-2.0.8')
 
-    @pytest.mark.parametrize("lat,lon,status", [
+    @pytest.mark.parametrize("lat,lon", [
         (19.71538, -155.544),  # Hawaii
         (-17.68298, 177.2756), # Fiji
         (31.6938, -85.1774),   # CONUS
