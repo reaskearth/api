@@ -29,12 +29,12 @@ missing_future_climate_west_asia_tile_ids = [6784, 6785, 5773, 6928, 6929, 6930,
 
 # These tiles are missing in the climate scenarios for The Americas region for 2035 and 2050
 missing_near_future_climate_the_americas_tile_ids = [5730, 5731, 5732, 5733, 5734,
-5871, 5872, 5873, 5874, 5875, 5876, 5877, 5878, 6015, 6018, 6019, 6021, 6022, 6025, 6159,
+5871, 5872, 5873, 5874, 5875, 5876, 5877, 5878, 6015, 6017, 6018, 6019, 6021, 6022, 6025, 6159,
 6162, 6163, 6164, 6165, 6302, 6442, 6585, 6586, 6587, 6589, 6730, 6731, 6732, 6733, 6880, 7024]
 
 # These tiles are missing in the climate scenarios for The Americas region for 2065 and 2080
 missing_far_future_climate_the_americas_tile_ids = [8607, 8608, 8609, 8610,
-    6021, 6022, 6025, 6163, 6164, 6165, 8611, 8612, 8613, 8614, 8615]
+    6017, 6021, 6022, 6025, 6163, 6164, 6165, 8611, 8612, 8613, 8614, 8615]
 
 class TestDeepcycCoverage:
     """
