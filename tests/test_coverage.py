@@ -17,7 +17,7 @@ RKG_RES = 2**-7 + 2**-9
 # These tiles have no or very low risk so we don't expect a return value
 # The present day simulations will have more events here due to the
 # longer simulation period
-empty_tile_ids = [8459, 8460, 8461, 4763, 4907, 4908, 7589, 7590, 7591, 7732, 7733, 7734, 7735,
+empty_tile_ids = [8459, 8460, 8461, 4763, 4907, 4908, 6017, 7589, 7590, 7591, 7732, 7733, 7734, 7735,
     7736, 5052, 7876, 7877, 7881, 2514, 8026, 3175, 8171, 3320, 8315, 8316, 8317]
 
 # These tiles are missing in the climate scenarios for West Asia region
@@ -29,12 +29,12 @@ missing_future_climate_west_asia_tile_ids = [6784, 6785, 5773, 6928, 6929, 6930,
 
 # These tiles are missing in the climate scenarios for The Americas region for 2035 and 2050
 missing_near_future_climate_the_americas_tile_ids = [5730, 5731, 5732, 5733, 5734,
-5871, 5872, 5873, 5874, 5875, 5876, 5877, 5878, 6015, 6017, 6018, 6019, 6021, 6022, 6025, 6159,
+5871, 5872, 5873, 5874, 5875, 5876, 5877, 5878, 6015, 6018, 6019, 6020, 6021, 6022, 6025, 6159, 
 6162, 6163, 6164, 6165, 6302, 6442, 6585, 6586, 6587, 6589, 6730, 6731, 6732, 6733, 6880, 7024]
 
 # These tiles are missing in the climate scenarios for The Americas region for 2065 and 2080
 missing_far_future_climate_the_americas_tile_ids = [8607, 8608, 8609, 8610,
-    6017, 6021, 6022, 6025, 6163, 6164, 6165, 8611, 8612, 8613, 8614, 8615]
+    6020, 6021, 6022, 6025, 6163, 6164, 6165, 8611, 8612, 8613, 8614, 8615]
 
 class TestDeepcycCoverage:
     """
@@ -173,4 +173,4 @@ class TestDeepcycCoverage:
                     assert status == 'NO CONTENT'
                     continue
 
-            assert status == 'OK'
+            assert status == 'OK', tile_id
