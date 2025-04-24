@@ -1,5 +1,10 @@
 import sys
 import pytest
+import io
+import json
+import pandas as pd
+import tempfile
+import shapely
 from pathlib import Path
 import geopandas as gpd
 
@@ -114,3 +119,69 @@ class TestCommon:
         assert ret['header']['wind_speed_units'] == wind_speed_units
 
         assert ws_kph == round(ws_other*multiplier)
+
+
+    @pytest.mark.skipif(sys.platform == 'win32', reason='Temp file is not writable on Windows')
+    @pytest.mark.skipif(sys.platform == 'darwin', reason='Temp file is not writable on Mac')
+    @pytest.mark.parametrize("prod", [mc, dc])
+    @pytest.mark.parametrize("format", [
+        None, 'geojson', 'csv',
+    ])
+    def test_tcwind_events_format(self, prod, format):
+
+        latitude = 28
+        longitude = -82
+
+        ret = prod.tcwind_events(latitude, longitude, format=format)
+
+        if format in [None, 'geojson']:
+            df = gpd.GeoDataFrame.from_features(ret)
+            assert len(df) > 60
+        else:
+            with tempfile.NamedTemporaryFile() as tmp:
+                tmp.write(ret)
+                df_from_csv = pd.read_csv(tmp.name)
+
+            df_from_csv_buf = pd.read_csv(io.StringIO(ret.decode()))
+            assert df_from_csv.equals(df_from_csv_buf)
+
+            ret = prod.tcwind_events(28, -82, format='geojson')
+            df_from_geojson = gpd.GeoDataFrame.from_features(ret)
+
+            # Check that header information is the same and included in the csv
+            for k, v in ret['header'].items():
+                if v is not None:
+                    assert df_from_csv[k].iloc[0] == v
+
+            # Now remove all header information and check columns
+            df_from_csv.drop(ret['header'].keys(), inplace=True, axis=1)
+
+            # Switch GeoJSON df to use same coordinates as CSV df. These are
+            # different to make the CSV easier to load into applications like
+            # Excel
+            df_from_geojson['longitude'] = df_from_geojson.apply(lambda r: r.query_geometry['coordinates'][0], axis=1)
+            df_from_geojson['latitude'] = df_from_geojson.apply(lambda r: r.query_geometry['coordinates'][1], axis=1)
+            df_from_geojson.drop(['geometry', 'query_geometry'], inplace=True, axis=1)
+
+            assert (df_from_csv['latitude'] == latitude).all()
+            assert (df_from_csv['longitude'] == longitude).all()
+
+            assert (df_from_csv.sort_values(by='event_id').values == df_from_geojson.sort_values(by='event_id').values).all()
+
+
+    @pytest.mark.parametrize("prod", [mc, dc])
+    @pytest.mark.parametrize("lats,lons", [
+        ([28], [-81]),
+    ])
+    @pytest.mark.parametrize("wind_speed_averaging_period", [
+        '3_seconds', '1_minute', '10_minute', 'INVALID'
+    ])
+    def test_tcwind_windspeed_averaging_period(self, prod, lats, lons, wind_speed_averaging_period):
+
+        try:
+            ret = self.dc.tcwind_events(lats, lons, terrain_correction='open_water',
+                                          wind_speed_averaging_period=wind_speed_averaging_period)
+            assert ret['header']['terrain_correction'] == 'open_water'
+            assert ret['header']['wind_speed_averaging_period'] == wind_speed_averaging_period
+        except Exception as e:
+            assert wind_speed_averaging_period in ['10_minute', 'INVALID']

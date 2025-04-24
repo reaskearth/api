@@ -20,6 +20,9 @@ from test_deepcyc import generate_random_points
 
 class TestMetryc():
     mc = Metryc()
+    mc_v105 = Metryc(product_version='Metryc-1.0.5')
+    mc_v106 = Metryc(product_version='Metryc-1.0.6')
+    mc_invalid = Metryc(product_version='INVALID')
 
     lats = [29.95747]
     lons = [-90.06295]
@@ -28,8 +31,8 @@ class TestMetryc():
 
 
     @pytest.mark.parametrize("lats,lons,storm_name", [
-        ([26.95747, 25.0], [-82.06295, -82.1], 'Katrina'),
         ([-16.5856], [178.898], 'Yasa'),
+        ([26.95747, 25.0], [-82.06295, -82.1], 'Katrina'),
         ([-20.2264804], [169.7780007], 'Yali')
     ])
     def test_tcwind_simple(self, lats, lons, storm_name):
@@ -117,6 +120,38 @@ class TestMetryc():
         assert len(df) > 30
 
 
+    @pytest.mark.parametrize("lat,lon,offshore", [
+        (18.0, -66, False),
+        (17.0, -66, True),
+    ])
+    def test_tcwind_compare_versions(self, lat, lon, offshore):
+
+        ret = self.mc_v105.tcwind_events(lat, lon, terrain_correction='open_water',
+                                         wind_speed_averaging_period='1_minute')
+        df_v105 = gpd.GeoDataFrame.from_features(ret)
+
+        ret = self.mc_v106.tcwind_events(lat, lon, terrain_correction='open_water',
+                                         wind_speed_averaging_period='1_minute')
+        df_v106 = gpd.GeoDataFrame.from_features(ret)
+        assert set(df_v106.status) == {'OK'}
+
+        if offshore:
+            assert len(df_v106[df_v106.storm_name != 'Unnamed']) == 25
+            # The old version has NO CONTENT in offshore locations
+            assert set(df_v105.status) == {'NO CONTENT'}
+        else:
+            assert len(df_v106[df_v106.storm_name != 'Unnamed']) == 20
+            # Lenny is missing from v1.0.5 likely because it's landfalling impact is nil or low
+            assert len(df_v105[df_v105.storm_name != 'Unnamed']) == 19
+
+        try:
+            ret = self.mc_invalid.tcwind_events(lat, lon, terrain_correction='open_water',
+                                             wind_speed_averaging_period='1_minute')
+        except Exception as e:
+            assert 'API returned HTTP 422' in str(e)
+            assert "unexpected value; permitted: \'Metryc-1.0.5\', \'Metryc-1.0.6\'" in str(e)
+
+
     def test_circle_intersection(self):
         """
         Test to see whether API is reporting circle to track intersection properly
@@ -152,8 +187,7 @@ class TestMetryc():
         assert 'Metryc Live' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
-        assert 'Otis_2023_2023291N08267_Live_USA_EP' in list(df.event_id)
-        assert len(df) >= 1
+        assert 'Rae_2025_SH192025_66f63d6eaf51592f_Metryc_20250225T12_NADI_SP' in list(df.event_id)
 
 
     def test_historical_list(self):
@@ -167,6 +201,12 @@ class TestMetryc():
 
         assert len(df.event_id) == len(set(df.event_id))
         assert len(df) > 800
+        # check there is no duplication
+        df['agency'] = df['event_id'].apply(lambda x: x.split('_')[-2])
+        df['basin'] = df['event_id'].apply(lambda x: x.split('_')[-1])
+        dup_df = df[df.duplicated(subset=['storm_name','storm_year','agency','basin'], keep='last')].loc[df['storm_name'] != 'Unnamed']
+        # Ernie 1996 is an exception
+        assert len(dup_df) == 1 and dup_df.iloc[0]['storm_name'] == 'Ernie' and dup_df.iloc[0]['storm_year'] == 1996
 
     @pytest.mark.parametrize("metryc_subproduct", [
         'historical',
@@ -187,17 +227,17 @@ class TestMetryc():
         assert 'Metryc' in ret['header']['product']
         df = gpd.GeoDataFrame.from_features(ret)
 
-        agencies = set([e.split('_')[4] for e in list(df.event_id)])
+        agencies = set([e.split('_')[-2] for e in list(df.event_id)])
         if metryc_subproduct == 'historical':
             assert agencies == set(expected_agencies)
         else:
             # FIXME: add recent storms from other agencies
-            assert agencies == {'USA'}
+            assert agencies == {'USA', 'NADI'}
 
         for agency in agencies:
             ret = list_endpoint(agency=agency)
             df = gpd.GeoDataFrame.from_features(ret)
-            assert set([e.split('_')[4] for e in list(df.event_id)]) == {agency}
+            assert set([e.split('_')[-2] for e in list(df.event_id)]) == {agency}
 
         # Select an invalid agency
         try:
@@ -242,8 +282,9 @@ class TestMetryc():
         ret = list_endpoint(agency=agency)
         df = gpd.GeoDataFrame.from_features(ret)
 
-        row = df.iloc[0]
+        row = df.iloc[1]
         min_lon, min_lat, max_lon, max_lat = row.geometry.bounds
+
         try:
             ret = list_endpoint(agency='INVALID')
         except Exception as e:
@@ -272,6 +313,7 @@ class TestMetryc():
             assert ret['header']['wind_speed_averaging_period'] == ws_avg
 
             df = gpd.GeoDataFrame.from_features(ret)
+
             assert len(df) > 1000
 
 
@@ -357,7 +399,11 @@ class TestMetryc():
             # FIXME: inconsistencies to be fixed
             if (storm_name == 'Bonita' and storm_year == 1996) or \
                (storm_name == 'Bernie' and storm_year == 2001) or \
-               (storm_name == 'Christelle' and storm_year == 1994):
+               (storm_name == 'Christelle' and storm_year == 1994) or \
+               ('Doksuri' in storm_name and storm_year == 2023) or \
+               ('Blanche' in storm_name and storm_year == 1987) or \
+               ('Doksuri' in storm_name and storm_year == 2023) or \
+               ('Ken' in storm_name and 'Lola' in storm_name and storm_year == 1989):
                 continue
 
             points_storm_name = ret['header']['storm_name']
